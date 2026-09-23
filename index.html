@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GK Daily Challenge — Shikshit Mitra</title>
+<meta name="theme-color" content="#0a1a2e">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<!-- Firebase SDK (same project as the main app, so the leaderboard is shared) -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyAaTyHTxmuktChm8AtJC15dfVejD66Gxvg",
+  authDomain: "digitalnepalapp.firebaseapp.com",
+  projectId: "digitalnepalapp",
+  storageBucket: "digitalnepalapp.firebasestorage.app",
+  messagingSenderId: "570701053036",
+  databaseURL: "https://digitalnepalapp-default-rtdb.asia-southeast1.firebasedatabase.app",
+  appId: "1:570701053036:web:0d074762777277e9d26c49",
+  measurementId: "G-VV0LRZQ2EK"
+};
+if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+const fbDB = firebase.database();
+const LB_REF = fbDB.ref('leaderboard');
+</script>
+<style>
+:root{
+  --primary:#1a6b3c;--primary-light:#e8f5ee;--primary-dark:#145530;
+  --accent:#f59e0b;--accent-light:#fffbeb;
+  --green:#16a34a;--green-light:#f0fdf4;
+  --red:#dc2626;--red-light:#fef2f2;
+  --bg:#f8fafc;--white:#ffffff;
+  --text:#0f172a;--text2:#475569;--text3:#94a3b8;
+  --border:#e2e8f0;--border2:#f1f5f9;
+  --shadow:0 1px 3px rgba(0,0,0,.08);
+  --shadow-md:0 4px 16px rgba(0,0,0,.12);
+  --radius:14px;--radius-sm:9px;
+  --nav-h:62px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes flagWave{
+  0%  {background-position:0% 50%}
+  25% {background-position:50% 30%}
+  50% {background-position:100% 50%}
+  75% {background-position:50% 70%}
+  100%{background-position:0% 50%}
+}
+@keyframes flagWave2{
+  0%  {transform:skewX(0deg) scaleY(1)}
+  20% {transform:skewX(2deg) scaleY(1.02)}
+  40% {transform:skewX(-2deg) scaleY(.98)}
+  60% {transform:skewX(1.5deg) scaleY(1.01)}
+  80% {transform:skewX(-1deg) scaleY(.99)}
+  100%{transform:skewX(0deg) scaleY(1)}
+}
+@keyframes flagRipple{
+  0%,100%{opacity:.7;transform:scaleX(1) translateX(0)}
+  25%{opacity:1;transform:scaleX(1.04) translateX(-2%)}
+  50%{opacity:.8;transform:scaleX(.97) translateX(2%)}
+  75%{opacity:1;transform:scaleX(1.03) translateX(-1%)}
+}
+.loading-box{padding:28px;text-align:center;color:var(--text3);font-size:13px}
+.spinner{width:24px;height:24px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 10px}
+.empty-box{padding:28px;text-align:center;color:var(--text3);font-size:13px}
+@keyframes dcShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+@keyframes dcFlash{0%{opacity:1}50%{opacity:.3}100%{opacity:1}}
+@keyframes dcPop{0%{transform:scale(1)}50%{transform:scale(1.06)}100%{transform:scale(1)}}
+.dc-shake{animation:dcShake .4s ease;}
+.dc-flash-green{animation:dcFlash .35s ease;}
+.dc-pop{animation:dcPop .25s ease;}
+@keyframes waveMove{
+  0%{transform:translateX(0) translateY(0) scaleY(1)}
+  25%{transform:translateX(-8px) translateY(2px) scaleY(1.01)}
+  50%{transform:translateX(-16px) translateY(0) scaleY(.99)}
+  75%{transform:translateX(-8px) translateY(-2px) scaleY(1.01)}
+  100%{transform:translateX(0) translateY(0) scaleY(1)}
+}
+@keyframes waveMove2{
+  0%{transform:translateX(0) translateY(0) scaleY(1)}
+  25%{transform:translateX(10px) translateY(-2px) scaleY(.99)}
+  50%{transform:translateX(20px) translateY(0) scaleY(1.01)}
+  75%{transform:translateX(10px) translateY(2px) scaleY(.99)}
+  100%{transform:translateX(0) translateY(0) scaleY(1)}
+}
+@keyframes waveMove3{
+  0%{transform:translateX(0) translateY(0) scaleY(1)}
+  33%{transform:translateX(-10px) translateY(2px) scaleY(1.01)}
+  66%{transform:translateX(10px) translateY(-2px) scaleY(.99)}
+  100%{transform:translateX(0) translateY(0) scaleY(1)}
+}
+.wave-container{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+.wave-svg{position:absolute;bottom:40%;left:-50%;width:200%;opacity:.18}
+.wave-svg.w1{animation:waveMove 8s ease-in-out infinite;opacity:.10}
+.wave-svg.w2{animation:waveMove2 11s ease-in-out infinite;opacity:.07;bottom:38%}
+.wave-svg.w3{animation:waveMove3 14s ease-in-out infinite;opacity:.05;bottom:36%}
+@media(min-width:600px){
+  .wave-svg{bottom:50%}
+  .wave-svg.w2{bottom:48%}
+  .wave-svg.w3{bottom:46%}
+}
+/* Splash wave */
+.splash-wave-container{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+.splash-wave{position:absolute;bottom:0;left:-50%;width:200%;opacity:.12}
+.splash-wave.sw1{animation:waveMove 8s ease-in-out infinite}
+.splash-wave.sw2{animation:waveMove2 11s ease-in-out infinite;opacity:.08;bottom:-10px}
+/* Game wave */
+.game-wave-bg{position:relative;overflow:hidden}
+.game-wave-bg .wave-container{z-index:0}
+.game-wave-bg > *:not(.wave-container){position:relative;z-index:1}
+html,body{min-height:100%;font-family:'Plus Jakarta Sans',sans-serif;background:#0a0a1a}
+.gk-shell{max-width:none;margin:0;width:100%;min-height:100vh;position:relative;overflow:hidden;padding:24px 3vw;background:linear-gradient(160deg,#0a0a1a 0%,#0d1f12 40%,#0a1a2e 100%)}
+.gk-shell > *:not(.wave-container){position:relative;z-index:1}
+
+/* ── LAPTOP LAYOUT ── */
+#game-menu,#dc-lb-panel{max-width:720px;margin:0 auto}
+#dc-game-area{max-width:1000px;margin:0 auto}
+/* question: larger than the answer boxes */
+#dc-question-box{font-size:24px!important;line-height:1.55!important;padding:30px 34px!important;min-height:150px;display:flex;align-items:center;margin-bottom:18px!important;border-radius:18px!important}
+/* options: 2 x 2 grid */
+#dc-opts{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+#dc-opts button{margin-bottom:0!important;font-size:16px!important;padding:16px 18px!important;min-height:72px;border-radius:14px!important}
+#dc-opts .dc-letter{width:34px!important;height:34px!important;font-size:14px!important}
+#dc-timer-ring{width:70px!important;height:70px!important;font-size:26px!important}
+@media(max-width:640px){
+  .gk-shell{padding:12px 14px}
+  #dc-question-box{font-size:16px!important;padding:16px!important;min-height:0}
+  #dc-opts{grid-template-columns:1fr}
+  #dc-opts button{font-size:13px!important;min-height:0;padding:12px 14px!important}
+}
+
+/* ── FULL SCREEN OVERRIDES ── */
+#dc-game-area{max-width:none!important;margin:0!important;padding:0 1vw}
+#dc-game-area:has(#dc-tab-review){max-width:900px!important;margin:0 auto!important}
+#game-menu,#dc-lb-panel{max-width:820px;margin:0 auto}
+#dc-game-area > div:first-child > div:first-child{zoom:1.5}
+#dc-timer-ring{width:88px!important;height:88px!important;font-size:32px!important;border-width:4px!important}
+#dc-question-box{font-size:clamp(24px,2.7vw,40px)!important;min-height:24vh;padding:clamp(28px,3.5vw,52px)!important;margin-bottom:clamp(28px,5vh,56px)!important}
+#dc-opts{gap:clamp(16px,2.6vh,26px) clamp(16px,2vw,28px)}
+#dc-opts button{font-size:clamp(17px,1.7vw,26px)!important;min-height:clamp(76px,12vh,120px);padding:18px 24px!important}
+#dc-opts .dc-letter{width:44px!important;height:44px!important;font-size:18px!important}
+@media(max-width:640px){
+  #dc-game-area > div:first-child > div:first-child{zoom:1}
+  #dc-timer-ring{width:60px!important;height:60px!important;font-size:22px!important}
+  #dc-question-box{min-height:0;margin-bottom:16px!important}
+  #dc-opts button{min-height:0;padding:12px 14px!important}
+  #dc-opts .dc-letter{width:30px!important;height:30px!important;font-size:12px!important}
+}
+</style>
+</head>
+<body>
+<div class="gk-shell">
+  <div class="wave-container">
+  <svg class="wave-svg w1" style="opacity:.07" viewBox="0 0 1440 120" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+    <path d="M0,60 C180,100 360,20 540,60 C720,100 900,20 1080,60 C1260,100 1380,40 1440,60 L1440,120 L0,120 Z" fill="#22c55e"/>
+  </svg>
+  <svg class="wave-svg w2" style="opacity:.05" viewBox="0 0 1440 120" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+    <path d="M0,80 C200,40 400,100 600,70 C800,40 1000,90 1200,60 C1320,40 1400,80 1440,70 L1440,120 L0,120 Z" fill="#16a34a"/>
+  </svg>
+  <svg class="wave-svg w3" style="opacity:.04" viewBox="0 0 1440 120" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+    <path d="M0,40 C240,90 480,20 720,50 C960,80 1200,30 1440,50 L1440,120 L0,120 Z" fill="#15803d"/>
+  </svg>
+</div>
+        <div id="game-menu">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0 16px">
+            <div style="width:40px"></div>
+            <div style="text-align:center">
+              <div style="font-size:22px;font-weight:900;color:#fff;letter-spacing:1px;text-shadow:0 0 20px rgba(34,197,94,.6)">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" style="vertical-align:middle;margin-right:4px"><rect x="2" y="7" width="20" height="15" rx="2"/><path d="M16 2H8M12 2v5M9 12h2M13 12h2M9 16h2M13 16h2"/></svg>
+                GAME ZONE
+              </div>
+              <div style="font-size:10px;color:rgba(255,255,255,.4);font-weight:700;letter-spacing:2px;margin-top:2px">CHOOSE YOUR CHALLENGE</div>
+            </div>
+            <button id="dc-sound-btn" onclick="toggleDCSound()" title="Sound ON"
+              style="width:40px;height:40px;border-radius:50%;background:rgba(34,197,94,.1);border:1.5px solid rgba(34,197,94,.4);color:#22c55e;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+            </button>
+          </div>
+          <div onclick="startDailyChallenge()" style="padding:18px 16px;background:linear-gradient(120deg,#0a2a14,#1a6b3c,#22c55e,#1a6b3c,#0a2a14);background-size:300% 300%;border-radius:18px;margin-bottom:12px;cursor:pointer;display:flex;align-items:center;gap:14px;box-shadow:0 0 0 1px rgba(34,197,94,.4),0 8px 32px rgba(34,197,94,.3),0 0 60px rgba(34,197,94,.1);position:relative;overflow:hidden;transition:transform .15s,box-shadow .15s;animation:flagWave 4s ease infinite" onmousedown="this.style.transform='scale(.97)'" onmouseup="this.style.transform=''">
+            <div style="position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:0">
+              <svg style="position:absolute;top:0;left:-30%;width:160%;height:100%;opacity:.12;animation:flagWave2 3.5s ease-in-out infinite" viewBox="0 0 400 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><path d="M0,50 Q50,15 100,50 Q150,85 200,50 Q250,15 300,50 Q350,85 400,50 L400,100 L0,100 Z" fill="#fff"/></svg>
+              <svg style="position:absolute;top:0;left:-30%;width:160%;height:100%;opacity:.07;animation:flagWave2 5s ease-in-out infinite reverse" viewBox="0 0 400 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><path d="M0,25 Q100,65 200,25 Q300,-15 400,25 L400,100 L0,100 Z" fill="#86efac"/></svg>
+              <svg style="position:absolute;bottom:0;left:-30%;width:160%;height:55%;opacity:.09;animation:flagWave2 4.5s ease-in-out 0.5s infinite" viewBox="0 0 400 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><path d="M0,30 Q50,5 100,30 Q150,55 200,30 Q250,5 300,30 Q350,55 400,30 L400,60 L0,60 Z" fill="#22c55e"/></svg>
+              <div style="position:absolute;inset:0;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.06) 30%,rgba(255,255,255,.12) 50%,rgba(255,255,255,.06) 70%,transparent 100%);background-size:200% 100%;animation:flagRipple 2.5s ease-in-out infinite"></div>
+            </div>
+            <div style="width:56px;height:56px;background:rgba(34,197,94,.25);border:1.5px solid rgba(34,197,94,.5);border-radius:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative;z-index:1">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z"/><path d="M12 6v6l4 2"/></svg>
+            </div>
+            <div style="flex:1;position:relative;z-index:1">
+              <div style="font-size:16px;font-weight:900;color:#fff;letter-spacing:.3px;text-shadow:0 0 12px rgba(34,197,94,.5)">Daily Challenge</div>
+              <div style="font-size:10px;color:rgba(255,255,255,.7);margin-top:3px;font-weight:600">15 Questions &bull; 30 sec each &bull; +2 / -2</div>
+              <div style="display:flex;gap:5px;margin-top:8px;align-items:center;flex-wrap:wrap">
+                <span id="dc-streak-badge" style="font-size:9px;background:rgba(245,158,11,.2);color:#f59e0b;padding:3px 9px;border-radius:99px;font-weight:800;border:1px solid rgba(245,158,11,.3)">Streak: 0</span>
+                <span id="dc-level-badge" style="font-size:9px;background:rgba(34,197,94,.2);color:#86efac;padding:3px 9px;border-radius:99px;font-weight:800;border:1px solid rgba(34,197,94,.3)">Beginner</span>
+              </div>
+            </div>
+            <div style="color:rgba(255,255,255,.6);font-size:22px;position:relative;z-index:1"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+          </div>
+          <button onclick="showDCLeaderboard()" style="width:100%;padding:12px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.12);border-radius:var(--radius-sm);font-family:inherit;font-size:12px;font-weight:700;color:rgba(255,255,255,.8);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px;transition:background .2s" onmouseover="this.style.background='rgba(34,197,94,.15)'" onmouseout="this.style.background='rgba(255,255,255,.06)'">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg> View Leaderboard
+          </button>
+          <div style="display:flex;align-items:center;justify-content:center;gap:8px;font-size:11px;color:rgba(255,255,255,.55);font-weight:600;margin-bottom:6px">
+            Playing as <b id="gk-player-name" style="color:#86efac"></b>
+            <button onclick="openNameModal()" style="background:none;border:none;color:#22c55e;font-family:inherit;font-size:11px;font-weight:800;cursor:pointer;text-decoration:underline">change</button>
+          </div>
+        </div><!-- end game-menu -->
+        <div id="dc-lb-panel" style="display:none">
+          <div style="display:flex;align-items:center;gap:10px;padding:14px 4px 12px">
+            <button onclick="closeDCLeaderboard()" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <div style="flex:1">
+              <div style="font-size:16px;font-weight:900;color:#fff">Leaderboard</div>
+              <div style="font-size:10px;color:rgba(255,255,255,.4);font-weight:600;margin-top:1px">Updates in realtime <span style="background:#22c55e;color:#fff;padding:1px 6px;border-radius:99px;font-size:8px;font-weight:800">LIVE</span></div>
+            </div>
+            <button onclick="fetchServerLB().then(function(){document.getElementById('dc-lb-content').innerHTML=renderLBHTML();})" style="width:36px;height:36px;border-radius:50%;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);color:#22c55e;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.08-4.36"/></svg>
+            </button>
+          </div>
+          <div id="dc-lb-content"><div style="text-align:center;padding:40px;color:rgba(255,255,255,.4)"><div class="spinner" style="border-top-color:#22c55e;border-color:rgba(255,255,255,.1);margin:0 auto 12px"></div>Loading...</div></div>
+        </div>
+        <div id="dc-game-area" style="display:none"></div>
+</div>
+
+<div id="gk-name-modal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.72);align-items:center;justify-content:center;padding:20px">
+  <div style="width:100%;max-width:340px;background:#0d1f12;border:1px solid rgba(34,197,94,.35);border-radius:18px;padding:20px">
+    <div style="font-size:16px;font-weight:900;color:#fff">Your name</div>
+    <div style="font-size:11px;color:rgba(255,255,255,.55);margin:4px 0 12px">Shown on the leaderboard</div>
+    <input id="gk-name-input" maxlength="24" placeholder="Enter your name" onkeydown="if(event.key==='Enter')saveNameModal()"
+      style="width:100%;padding:11px 13px;border-radius:10px;border:1.5px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07);color:#fff;font-family:inherit;font-size:13px;font-weight:600;outline:none">
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button onclick="closeNameModal()" style="flex:1;padding:11px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.08);color:rgba(255,255,255,.8);font-family:inherit;font-weight:700;cursor:pointer">Cancel</button>
+      <button onclick="saveNameModal()" style="flex:1;padding:11px;border-radius:10px;border:none;background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;font-family:inherit;font-weight:800;cursor:pointer">Save &amp; Play</button>
+    </div>
+  </div>
+</div>
+<script>
+/* ============================================================
+   DAILY CHALLENGE GAME
+   ============================================================ */
+var DC_SHEET_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vSvboPbqXSBqbMR5UilxgOyrLvrSsxHl45mTxw6DH8DDnK1sRw_X9qIcke2Wi6zSgX4bv0gyA1hmyE-/pub?gid=0&single=true&output=csv';
+var S2_URL=DC_SHEET_URL; // S2 — Daily Challenge quiz questions
+var DC_STORE_KEY='dn-dc-v1';
+var DC_LB_KEY='dn-dc-lb-v1';
+var dcQuestions=[],dcSession={q:[],idx:0,score:0,xp:0,answers:[],startTime:0},dcTimer=null,dcTimeLeft=30;
+
+/* ── SOUND ENGINE ── */
+var dcAudioCtx=null;
+var dcSoundOn=true; // default ON
+
+function getDCAudio(){
+  if(!dcAudioCtx){
+    try{dcAudioCtx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}
+  }
+  if(dcAudioCtx&&dcAudioCtx.state==='suspended') dcAudioCtx.resume();
+  return dcAudioCtx;
+}
+
+function toggleDCSound(){
+  dcSoundOn=!dcSoundOn;
+  var btn=document.getElementById('dc-sound-btn');
+  if(!btn) return;
+  if(dcSoundOn){
+    btn.innerHTML=svgMicOn();
+    btn.title='Sound ON';
+    btn.style.color='#22c55e';
+    btn.style.borderColor='rgba(34,197,94,.4)';
+  } else {
+    btn.innerHTML=svgMicOff();
+    btn.title='Sound OFF';
+    btn.style.color='rgba(255,255,255,.3)';
+    btn.style.borderColor='rgba(255,255,255,.1)';
+  }
+  if(dcSoundOn) playDCSound('click');
+}
+
+function svgMicOn(){
+  return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>';
+}
+function svgMicOff(){
+  return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>';
+}
+
+function playDCSound(type){
+  if(!dcSoundOn) return;
+  var ctx=getDCAudio();if(!ctx)return;
+  var t=ctx.currentTime;
+
+  function note(freq,startT,dur,vol,waveType,detune){
+    var o=ctx.createOscillator(),g=ctx.createGain();
+    if(detune) o.detune.setValueAtTime(detune,startT);
+    o.type=waveType||'sine';
+    o.frequency.setValueAtTime(freq,startT);
+    g.gain.setValueAtTime(0,startT);
+    g.gain.linearRampToValueAtTime(vol,startT+0.01);
+    g.gain.exponentialRampToValueAtTime(0.001,startT+dur);
+    o.connect(g);g.connect(ctx.destination);
+    o.start(startT);o.stop(startT+dur);
+  }
+
+  if(type==='click'){
+    note(900,t,0.06,0.18,'sine');
+    return;
+  }
+
+  if(type==='correct'){
+    /* Bright xylophone-style chord: root + fifth + octave, layered */
+    note(523,t,0.35,0.55,'triangle');       // C5
+    note(659,t+0.04,0.3,0.45,'triangle');   // E5
+    note(784,t+0.08,0.28,0.4,'triangle');   // G5
+    note(1047,t+0.14,0.35,0.5,'sine');      // C6 shine
+    /* Subtle sparkle harmonics */
+    note(1568,t+0.1,0.2,0.2,'sine');        // G6
+    note(2093,t+0.18,0.15,0.15,'sine');     // C7
+    return;
+  }
+
+  if(type==='wrong'){
+    /* Heavy buzzer: square wave dropping pitch + low thud */
+    var o=ctx.createOscillator(),g=ctx.createGain();
+    o.type='square';
+    o.frequency.setValueAtTime(200,t);
+    o.frequency.linearRampToValueAtTime(80,t+0.35);
+    g.gain.setValueAtTime(0.55,t);
+    g.gain.linearRampToValueAtTime(0.4,t+0.1);
+    g.gain.exponentialRampToValueAtTime(0.001,t+0.5);
+    o.connect(g);g.connect(ctx.destination);
+    o.start(t);o.stop(t+0.5);
+    /* Low thud punch */
+    note(60,t,0.25,0.6,'sine');
+    note(110,t+0.05,0.2,0.35,'sawtooth');
+    return;
+  }
+
+  if(type==='finish'){
+    /* Victory fanfare: ascending 8-note arpeggio + final chord */
+    var fanfare=[392,440,523,659,523,659,784,1047];
+    fanfare.forEach(function(freq,i){
+      note(freq, t+i*0.1, 0.22, 0.5, 'triangle');
+    });
+    /* Final chord hit */
+    [523,659,784,1047].forEach(function(freq){
+      note(freq, t+0.85, 0.6, 0.45, 'sine');
+    });
+    return;
+  }
+
+  if(type==='entry'){
+    /* Cool entry music: 12-step epic rising sequence with harmony */
+    var melody=[261,294,330,349,392,440,494,523,587,659,784,1047];
+    var harmony=[196,220,247,261,294,330,370,392,440,494,587,784];
+    melody.forEach(function(freq,i){
+      note(freq,  t+i*0.07, 0.18, 0.45, 'triangle');
+      note(harmony[i], t+i*0.07, 0.18, 0.25, 'sine');
+    });
+    /* Big finale chord */
+    [523,659,784,1047,1318].forEach(function(freq,i){
+      note(freq, t+0.88, 0.8, 0.4-i*0.04, 'sine');
+    });
+    return;
+  }
+}
+
+/* ── LEADERBOARD ── */
+function getLBKey(){return DC_LB_KEY;}
+function getLB(){try{return JSON.parse(localStorage.getItem(getLBKey())||'[]');}catch(e){return[];}}
+function saveLB(lb){localStorage.setItem(getLBKey(),JSON.stringify(lb));}
+function updateLB(name,score){
+  var lb=getLB();
+  var existing=lb.findIndex(function(e){return e.name===name;});
+  if(existing>=0){
+    lb[existing].total=(lb[existing].total||lb[existing].best||0)+Math.max(0,score);
+    if(score>lb[existing].best) lb[existing].best=score;
+    lb[existing].last=score;
+    lb[existing].plays=(lb[existing].plays||1)+1;
+  } else {
+    lb.push({name:name,total:Math.max(0,score),best:score,last:score,plays:1});
+  }
+  lb.sort(function(a,b){return (b.total||b.best||0)-(a.total||a.best||0);});
+  lb=lb.slice(0,50);
+  saveLB(lb);
+  var entry=lb[lb.findIndex(function(e){return e.name===name;})];
+  pushLBToServer(name,score,entry.best,entry.plays,entry.total);
+  return lb;
+}
+function pushLBToServer(name,score,best,plays,total){
+  try{
+    var key = name.replace(/[.#$\/\[\]]/g,'_');
+    LB_REF.child(key).transaction(function(current){
+      var addPoints=Math.max(0,score);
+      if(!current){
+        return {name:name, best:best, score:score, total:addPoints, plays:1, updatedAt:Date.now()};
+      }
+      return {
+        name: name,
+        best: Math.max(current.best||0, best),
+        score: score,
+        total: (current.total||current.best||0) + addPoints,
+        plays: (current.plays||0) + 1,
+        updatedAt: Date.now()
+      };
+    });
+  }catch(e){ console.log('Firebase push error:', e); }
+}
+function fetchServerLB(){
+  return new Promise(function(resolve){
+    LB_REF.orderByChild('total').limitToLast(50).once('value')
+      .then(function(snapshot){
+        var data=snapshot.val();
+        if(!data){ resolve(getLB()); return; }
+        var arr=Object.values(data);
+        arr.sort(function(a,b){return (b.total||b.best||0)-(a.total||a.best||0);});
+        saveLB(arr);
+        resolve(arr);
+      })
+      .catch(function(){ resolve(getLB()); });
+  });
+}
+
+// Realtime listener — auto refresh leaderboard when anyone plays
+function startLBRealtime(){
+  LB_REF.orderByChild('total').limitToLast(50).on('value', function(snapshot){
+    var data=snapshot.val();
+    if(!data) return;
+    var arr=Object.values(data);
+    arr.sort(function(a,b){return (b.total||b.best||0)-(a.total||a.best||0);});
+    saveLB(arr);
+    // If leaderboard panel is open, refresh it live
+    var panel=document.getElementById('dc-lb-panel');
+    var cont=document.getElementById('dc-lb-content');
+    if(panel&&panel.style.display!=='none'&&cont){
+      cont.innerHTML=renderLBHTML();
+    }
+  });
+}
+function renderLBHTML(){
+  var lb=getLB();
+  if(!lb.length) return '<div style="text-align:center;padding:24px 16px;font-size:12px;color:var(--text2)">'
+    +'<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display:block;margin:0 auto 8px;opacity:.4"><path d="M8 21h8M12 17v4M7 4h10l1 7a5 5 0 0 1-10 0z"/><path d="M5 4h2M17 4h2M5 4c0 2 1 3 2 4M19 4c0 2-1 3-2 4"/></svg>'
+    +'No scores yet — play to appear here!</div>';
+  var myName='';
+  myName=getPlayerName();
+  var svgGold='<svg width="20" height="20" viewBox="0 0 24 24" fill="#f59e0b" stroke="#d97706" stroke-width="1"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
+  var svgSilver='<svg width="18" height="18" viewBox="0 0 24 24" fill="#94a3b8" stroke="#64748b" stroke-width="1"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
+  var svgBronze='<svg width="18" height="18" viewBox="0 0 24 24" fill="#cd7c3a" stroke="#b45309" stroke-width="1"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
+  var svgYou='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+  var svgCtrl='<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="15" rx="2"/><path d="M16 2H8M12 2v5M9 12h6M9 16h6"/></svg>';
+  var html='';
+  lb.forEach(function(e,i){
+    var isMe=myName&&e.name.toLowerCase()===myName.toLowerCase();
+    var isTop3=i<3;
+    // Medal SVG
+    var medal=i===0?svgGold:i===1?svgSilver:i===2?svgBronze
+      :'<span style="font-size:11px;font-weight:800;color:#6b7280;min-width:20px;text-align:center;display:inline-block">'+(i+1)+'</span>';
+    // Card background & border
+    var bg,border;
+    if(isMe){bg='linear-gradient(135deg,#052e16,#166534)';border='#22c55e';}
+    else if(i===0){bg='linear-gradient(135deg,#451a03,#92400e)';border='#f59e0b';}
+    else if(i===1){bg='linear-gradient(135deg,#1e293b,#334155)';border='#94a3b8';}
+    else if(i===2){bg='linear-gradient(135deg,#431407,#7c2d12)';border='#cd7c3a';}
+    else{bg='var(--white)';border='var(--border)';}
+    // Name color: top 3 = orange, rest = green, YOU = always white
+    var nameColor=isMe?'#fff':isTop3?'#fb923c':'#22c55e';
+    var scoreColor=i===0?'#fbbf24':i===1?'#cbd5e1':i===2?'#fb923c':isMe?'#86efac':'var(--primary)';
+    var subColor=isMe||isTop3?'rgba(255,255,255,.6)':'var(--text2)';
+    html+='<div style="display:flex;align-items:center;gap:10px;padding:11px 13px;background:'+bg+';border:1.5px solid '+border+';border-radius:10px;margin-bottom:7px;position:relative">';
+    if(isMe) html+='<div style="position:absolute;top:3px;right:8px;font-size:8px;font-weight:800;color:#86efac;display:flex;align-items:center;gap:3px">'+svgYou+' YOU</div>';
+    if(i===0) html+='<div style="position:absolute;top:3px;left:40px;font-size:8px;font-weight:800;color:#fbbf24">1ST</div>';
+    if(i===1) html+='<div style="position:absolute;top:3px;left:40px;font-size:8px;font-weight:800;color:#cbd5e1">2ND</div>';
+    if(i===2) html+='<div style="position:absolute;top:3px;left:40px;font-size:8px;font-weight:800;color:#fb923c">3RD</div>';
+    html+='<div style="width:28px;text-align:center;flex-shrink:0">'+medal+'</div>';
+    html+='<div style="flex:1;min-width:0;padding-top:'+(isTop3?'8':'0')+'px">';
+    html+='<div style="font-size:12px;font-weight:800;color:'+nameColor+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+e.name+'</div>';
+    html+='<div style="font-size:10px;color:'+subColor+';margin-top:1px;display:flex;align-items:center;gap:3px">'+svgCtrl+' '+(e.plays||1)+' play'+((e.plays||1)>1?'s':'')+'</div>';
+    html+='</div>';
+    html+='<div style="text-align:right;flex-shrink:0">';
+    html+='<div style="font-size:15px;font-weight:800;color:'+scoreColor+'">'+(e.total||e.best||0)+'</div>';
+    html+='<div style="font-size:8px;color:'+subColor+';font-weight:700;letter-spacing:.3px">TOTAL PTS</div>';
+    html+='<div style="font-size:9px;color:'+subColor+';font-weight:600">total pts</div>';
+    html+='</div></div>';
+  });
+  return html;
+}
+
+function getDCStore(){try{return JSON.parse(localStorage.getItem(DC_STORE_KEY)||'{}')||{};}catch(e){return{};}}
+function saveDCStore(obj){localStorage.setItem(DC_STORE_KEY,JSON.stringify(obj));}
+
+function getDCStreak(){
+  var s=getDCStore();
+  var now=new Date();var utc=now.getTime()+(now.getTimezoneOffset()*60000);var np=new Date(utc+(5*3600+45*60)*1000);
+  var today=np.toDateString();
+  var yesterday=new Date(np);yesterday.setDate(np.getDate()-1);
+  var streak=s.streak||0;
+  if(s.lastPlayed===today) return streak;
+  if(s.lastPlayed===yesterday.toDateString()) return streak; // Not reset yet, will increment on play
+  if(s.lastPlayed&&s.lastPlayed!==yesterday.toDateString()&&s.lastPlayed!==today) return 0; // Missed a day
+  return streak;
+}
+
+function getDCPoints(){return getDCStore().totalPoints||0;}
+function getDCLevel(pts){
+  if(pts>=1000) return {name:'Master',color:'#f59e0b'};
+  if(pts>=500)  return {name:'Expert',color:'#a855f7'};
+  if(pts>=200)  return {name:'Advanced',color:'#3b82f6'};
+  if(pts>=80)   return {name:'Learner',color:'#22c55e'};
+  return          {name:'Beginner',color:'rgba(255,255,255,.5)'};
+}
+
+function showDCLeaderboard(){
+  document.getElementById('game-menu').style.display='none';
+  document.getElementById('dc-game-area').style.display='none';
+  var panel=document.getElementById('dc-lb-panel');
+  var cont=document.getElementById('dc-lb-content');
+  panel.style.display='block';
+  cont.innerHTML='<div style="text-align:center;padding:40px;color:rgba(255,255,255,.4)"><div class="spinner" style="border-top-color:#22c55e;border-color:rgba(255,255,255,.1);margin:0 auto 12px"></div>Loading realtime data...</div>';
+  fetchServerLB().then(function(){ cont.innerHTML=renderLBHTML(); });
+}
+function closeDCLeaderboard(){
+  document.getElementById('dc-lb-panel').style.display='none';
+  document.getElementById('game-menu').style.display='block';
+}
+function updateDCBadges(){
+  var streak=getDCStreak();var pts=getDCPoints();var lvl=getDCLevel(pts);
+  var sb=document.getElementById('dc-streak-badge');
+  var lb=document.getElementById('dc-level-badge');
+  if(sb) sb.innerHTML='<i class="fa-solid fa-fire" style="color:#f59e0b"></i> Streak: '+streak;
+  if(lb) lb.textContent=lvl.name;
+}
+
+async function startDailyChallenge(){
+  if(!getPlayerName()){ openNameModal(startDailyChallenge); return; }
+  playDCSound('entry');
+  document.getElementById('game-menu').style.display='none';
+  var area=document.getElementById('dc-game-area');
+  area.style.display='block';
+  area.innerHTML='<div style="padding:40px;text-align:center"><div class="spinner" style="border-top-color:#22c55e;border-color:rgba(255,255,255,.15);margin:0 auto 12px"></div><div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.6)">Loading questions...</div></div>';
+  try{
+    var rows=await fetchDCSheet();
+    if(!rows||rows.length<1){
+      area.innerHTML='<div class="empty-box" style="margin:20px 14px"><b>0 questions loaded.</b><br><small>Sheet may still be loading or has formatting issues. Wait 10 seconds and try again.</small></div>'
+        +'<button onclick="startDailyChallenge()" style="display:block;margin:8px auto;padding:9px 20px;background:var(--primary);color:#fff;border:none;border-radius:99px;font-weight:700;cursor:pointer"><i class="fa-solid fa-rotate-right"></i> Retry</button>'
+        +'<button onclick="document.getElementById(\'game-menu\').style.display=\'block\';document.getElementById(\'dc-game-area\').style.display=\'none\'" style="display:block;margin:0 auto;padding:9px 20px;background:var(--bg);color:var(--text);border:1.5px solid var(--border);border-radius:99px;font-weight:700;cursor:pointer">← Back</button>';
+      return;
+    }
+    // Pick 15 random questions
+    var shuffled=rows.slice().sort(function(){return Math.random()-.5;});
+    dcQuestions=shuffled.slice(0,Math.min(15,shuffled.length));
+    dcSession={q:dcQuestions,idx:0,score:0,xp:0,answers:[]};
+    renderDCQuestion();
+  }catch(e){
+    area.innerHTML='<div class="empty-box" style="margin:20px 14px"><b>Network error loading questions.</b><br><small>Check your internet connection and that the sheet is published as CSV (File → Share → Publish to web → CSV).</small></div>'
+      +'<button onclick="startDailyChallenge()" style="display:block;margin:8px auto;padding:9px 20px;background:var(--primary);color:#fff;border:none;border-radius:99px;font-weight:700;cursor:pointer"><i class="fa-solid fa-rotate-right"></i> Retry</button>'
+      +'<button onclick="document.getElementById(\'game-menu\').style.display=\'block\';document.getElementById(\'dc-game-area\').style.display=\'none\'" style="display:block;margin:0 auto;padding:9px 20px;background:var(--bg);color:var(--text);border:1.5px solid var(--border);border-radius:99px;font-weight:700;cursor:pointer">← Back</button>';
+  }
+}
+
+function fetchDCSheet(){
+  function parseToRows(csv){
+    var lines=csv.trim().split('\n');
+    var rows=[];
+    for(var i=1;i<lines.length;i++){
+      var cols=parseCSVLine(lines[i]);
+      if(cols.length>=6&&cols[0].trim()){
+        rows.push({q:cols[0].trim(),o:[cols[1].trim(),cols[2].trim(),cols[3].trim(),cols[4].trim()],a:cols[5].trim()});
+      }
+    }
+    return rows;
+  }
+  return fetch(DC_SHEET_URL)
+    .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.text();})
+    .then(function(csv){return parseToRows(csv);})
+    .catch(function(){
+      return fetch('https://api.allorigins.win/raw?url='+encodeURIComponent(DC_SHEET_URL))
+        .then(function(r){return r.text();})
+        .then(function(csv){return parseToRows(csv);})
+        .catch(function(){
+          return fetch('https://corsproxy.io/?'+encodeURIComponent(DC_SHEET_URL))
+            .then(function(r){return r.text();})
+            .then(function(csv){return parseToRows(csv);});
+        });
+    });
+}
+
+function parseCSVLine(line){
+  var result=[],inQ=false,cur='';
+  for(var i=0;i<line.length;i++){
+    var c=line[i];
+    if(c==='"'){inQ=!inQ;}
+    else if(c===','&&!inQ){result.push(cur);cur='';}
+    else cur+=c;
+  }
+  result.push(cur);
+  return result;
+}
+
+function renderDCQuestion(){
+  clearInterval(dcTimer);
+  var area=document.getElementById('dc-game-area');
+  var q=dcSession.q[dcSession.idx];
+  var total=dcSession.q.length;
+  var num=dcSession.idx+1;
+  dcTimeLeft=30;
+  dcSession.startTime=Date.now();
+  playDCSound('click');
+
+  var opts=q.o.map(function(o,i){return{text:o,origIdx:i};}).sort(function(){return Math.random()-.5;});
+  var correctText=q.a;
+  var pct=Math.round((dcSession.idx/total)*100);
+  var xpLevel=getDCLevel(dcSession.xp);
+
+  // Progress label
+  var progLabel=num===total?'Final Question!'
+    :num>=total-2?'Almost done — '+( total-num)+' left!'
+    :'Question '+num+' of '+total;
+
+  // SVGs
+  var svgX='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  var svgBolt='<svg width="11" height="11" viewBox="0 0 24 24" fill="#f59e0b" stroke="none"><path d="M13 2L3 14h9l-1 8 10-12h-9z"/></svg>';
+
+  area.innerHTML=
+    '<div style="padding:14px 14px 4px">'
+    // Header row
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
+    +'<button onclick="dcQuit()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);padding:6px 11px;border-radius:99px;font-size:11px;font-weight:700;color:rgba(255,255,255,.7);cursor:pointer;display:flex;align-items:center;gap:5px">'+svgX+' Quit</button>'
+    +'<div style="text-align:center">'
+    +'<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.5)">'+progLabel+'</div>'
+    +'<div style="font-size:11px;font-weight:800;color:'+xpLevel.color+'">'+xpLevel.name+' &bull; '+dcSession.xp+' XP</div>'
+    +'</div>'
+    +'<div style="display:flex;align-items:center;gap:6px">'
+    +'<div style="font-size:13px;font-weight:800;color:#22c55e">'+dcSession.score+' pts</div>'
+    +'<button onclick="toggleDCSound()" id="dc-sound-btn" style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:'+(dcSoundOn?'#22c55e':'rgba(255,255,255,.3)')+';cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">'+(dcSoundOn?'<svg width="14" height="14" viewBox="0 0 24 24" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z\"/><path d=\"M19 10v2a7 7 0 0 1-14 0v-2\"/><line x1=\"12\" y1=\"19\" x2=\"12\" y2=\"23\"/><line x1=\"8\" y1=\"23\" x2=\"16\" y2=\"23\"/></svg>':'<svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><line x1=\"1\" y1=\"1\" x2=\"23\" y2=\"23\"/><path d=\"M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6\"/><path d=\"M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23\"/><line x1=\"12\" y1=\"19\" x2=\"12\" y2=\"23\"/><line x1=\"8\" y1=\"23\" x2=\"16\" y2=\"23\"/></svg>')+'</button>'
+    +'</div>'
+    +'</div>'
+    // Progress bar
+    +'<div style="height:3px;background:rgba(255,255,255,.1);border-radius:99px;margin-bottom:10px">'
+    +'<div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,#22c55e,#86efac);border-radius:99px;transition:width .4s"></div></div>'
+    // Timer ring
+    +'<div style="text-align:center;margin-bottom:10px">'
+    +'<div id="dc-timer-ring" style="display:inline-flex;align-items:center;justify-content:center;width:54px;height:54px;border-radius:50%;border:3px solid #22c55e;font-size:20px;font-weight:800;color:#22c55e;transition:border-color .5s,color .5s;background:rgba(34,197,94,.08)">'
+    +'<span id="dc-timer-num">30</span></div></div>'
+    // Question box
+    +'<div id="dc-question-box" style="background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);border-radius:14px;padding:14px;margin-bottom:12px;font-size:13px;font-weight:700;color:#fff;line-height:1.6">'+q.q+'</div>'
+    // Options
+    +'<div id="dc-opts">'
+    +opts.map(function(o,i){
+      var letter=['A','B','C','D'][i];
+      return '<button data-val="'+escQ(o.text)+'" onclick="dcAnswer(this,\''+escQ(o.text)+'\',\''+escQ(correctText)+'\')" style="display:flex;align-items:center;gap:10px;width:100%;padding:12px 14px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.15);border-radius:12px;margin-bottom:8px;font-family:inherit;font-size:12px;font-weight:600;color:#fff;cursor:pointer;text-align:left;transition:all .2s">'
+      +'<span class="dc-letter" style="width:26px;height:26px;border-radius:50%;background:rgba(34,197,94,.2);color:#86efac;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s">'+letter+'</span>'
+      +'<span>'+o.text+'</span></button>';
+    }).join('')
+    +'</div></div>';
+
+  // Timer tick
+  dcTimer=setInterval(function(){
+    dcTimeLeft--;
+    var el=document.getElementById('dc-timer-num');
+    var ring=document.getElementById('dc-timer-ring');
+    if(el) el.textContent=dcTimeLeft;
+    if(ring){
+      if(dcTimeLeft<=10){ring.style.borderColor='#ef4444';ring.style.color='#ef4444';ring.style.background='rgba(239,68,68,.1)';}
+      else if(dcTimeLeft<=20){ring.style.borderColor='#f59e0b';ring.style.color='#f59e0b';ring.style.background='rgba(245,158,11,.08)';}
+    }
+    if(dcTimeLeft<=0){
+      clearInterval(dcTimer);
+      playDCSound('wrong');
+      dcSession.score-=2;
+      dcSession.answers.push({q:dcSession.q[dcSession.idx].q,chosen:'(Time Out)',correct:correctText,ok:false,bonus:0});
+      dcTimeoutReveal(correctText);
+    }
+  },1000);
+}
+
+function escQ(s){return (s||'').replace(/'/g,'&#39;').replace(/"/g,'&quot;');}
+
+function dcAnswer(btn,chosen,correct){
+  clearInterval(dcTimer);
+  var ok=(chosen.toLowerCase().trim()===correct.toLowerCase().trim());
+  // Fast answer bonus: <5s = +4 pts, <10s = +2 pts, else standard
+  var elapsed=(Date.now()-dcSession.startTime)/1000;
+  var timeSpent=30-dcTimeLeft;
+  var bonus=0;
+  if(ok){
+    if(timeSpent<5) bonus=4;
+    else if(timeSpent<10) bonus=2;
+    dcSession.score+=2+bonus;
+    dcSession.xp+=10+(bonus>0?5:0);
+    playDCSound('correct');
+    // Green flash on question box
+    var qbox=document.getElementById('dc-question-box');
+    if(qbox) qbox.classList.add('dc-flash-green');
+  } else {
+    dcSession.score-=2;
+    playDCSound('wrong');
+    // Red shake on wrong button
+    btn.classList.add('dc-shake');
+  }
+  dcSession.answers.push({q:dcSession.q[dcSession.idx].q,chosen:chosen,correct:correct,ok:ok,bonus:bonus});
+
+  // Highlight buttons
+  var opts=document.getElementById('dc-opts');
+  if(opts) opts.querySelectorAll('button').forEach(function(b){
+    var dataVal=b.getAttribute('data-val')||'';
+    b.disabled=true;b.style.cursor='default';
+    if(dataVal.toLowerCase().trim()===correct.toLowerCase().trim()){
+      b.style.background='#16a34a';b.style.borderColor='#22c55e';b.style.color='#fff';
+      b.querySelector('.dc-letter').style.background='rgba(255,255,255,.25)';
+      b.querySelector('.dc-letter').style.color='#fff';
+    } else if(b===btn&&!ok){
+      b.style.background='#dc2626';b.style.borderColor='#ef4444';b.style.color='#fff';
+      b.querySelector('.dc-letter').style.background='rgba(255,255,255,.25)';
+      b.querySelector('.dc-letter').style.color='#fff';
+    }
+  });
+
+  // Show bonus toast
+  if(bonus>0){
+    var area=document.getElementById('dc-game-area');
+    var toast=document.createElement('div');
+    toast.textContent='+'+bonus+' Speed Bonus!';
+    toast.style.cssText='position:fixed;top:80px;left:50%;transform:translateX(-50%);background:#f59e0b;color:#fff;font-size:12px;font-weight:800;padding:6px 16px;border-radius:99px;z-index:999;pointer-events:none';
+    document.body.appendChild(toast);
+    setTimeout(function(){toast.remove();},1200);
+  }
+
+  // Update score in UI
+  var scoreEl=document.querySelector('#dc-game-area [style*="pts"]');
+  if(scoreEl) scoreEl.textContent=dcSession.score+' pts';
+
+  setTimeout(function(){dcNext();},ok?750:1000);
+}
+
+function dcTimeoutReveal(correct){
+  var opts=document.getElementById('dc-opts');
+  if(opts) opts.querySelectorAll('button').forEach(function(b){
+    var dataVal=b.getAttribute('data-val')||'';
+    b.disabled=true;b.style.cursor='default';
+    if(dataVal.toLowerCase().trim()===correct.toLowerCase().trim()){
+      b.style.background='#16a34a';b.style.borderColor='#22c55e';b.style.color='#fff';
+      var dl=b.querySelector('.dc-letter');
+      if(dl){dl.style.background='rgba(255,255,255,.25)';dl.style.color='#fff';}
+    }
+  });
+  setTimeout(function(){dcNext();},900);
+}
+
+function dcNext(){
+  dcSession.idx++;
+  if(dcSession.idx>=dcSession.q.length){dcShowResult();}
+  else{renderDCQuestion();}
+}
+
+function dcQuit(){
+  clearInterval(dcTimer);
+  document.getElementById('dc-game-area').style.display='none';
+  document.getElementById('game-menu').style.display='block';
+}
+
+function dcShowResult(){
+  clearInterval(dcTimer);
+  playDCSound('finish');
+
+  // ── Streak & store update ──
+  var store=getDCStore();
+  var now=new Date();var utc=now.getTime()+(now.getTimezoneOffset()*60000);var np=new Date(utc+(5*3600+45*60)*1000);
+  var today=np.toDateString();
+  var yesterday=new Date(np);yesterday.setDate(np.getDate()-1);
+  var streak=store.streak||0;
+  if(store.lastPlayed===yesterday.toDateString()) streak+=1;
+  else if(store.lastPlayed===today) streak=streak;
+  else streak=1;
+  var totalPoints=(store.totalPoints||0)+Math.max(0,dcSession.score);
+  var totalXP=(store.totalXP||0)+dcSession.xp;
+  saveDCStore({streak:streak,lastPlayed:today,totalPoints:totalPoints,bestScore:Math.max(store.bestScore||0,dcSession.score),totalXP:totalXP});
+
+  // Save LB
+  var lbName=getPlayerName()||'Guest';
+  updateLB(lbName,dcSession.score);
+  updateDCBadges();
+
+  var lvl=getDCLevel(totalXP);
+  var correct=dcSession.answers.filter(function(a){return a.ok;}).length;
+  var wrong=dcSession.answers.filter(function(a){return !a.ok;}).length;
+  var bonusTotal=dcSession.answers.reduce(function(s,a){return s+(a.bonus||0);},0);
+  var area=document.getElementById('dc-game-area');
+
+  // Trophy SVG based on score
+  var trophySVG=dcSession.score>=20
+    ?'<svg width="44" height="44" viewBox="0 0 24 24" fill="#f59e0b" stroke="#d97706" stroke-width="1"><path d="M8 21h8M12 17v4M7 4h10l1 7a5 5 0 0 1-10 0z"/><path d="M5 4h2M17 4h2M5 4c0 2 1 3 2 4M19 4c0 2-1 3-2 4"/></svg>'
+    :dcSession.score>=10
+    ?'<svg width="44" height="44" viewBox="0 0 24 24" fill="#f59e0b" stroke="#d97706" stroke-width="1"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>'
+    :'<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="1.5" stroke-linecap="round"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>';
+
+  var svgCheck='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#86efac" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  var svgX2='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fca5a5" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  var svgFire='<svg width="12" height="12" viewBox="0 0 24 24" fill="#f59e0b" stroke="none"><path d="M12 2c0 4-4 6-4 10a4 4 0 0 0 8 0c0-4-4-6-4-10z"/><path d="M12 14c0 1.5-1 2.5-1 4a1 1 0 0 0 2 0c0-1.5-1-2.5-1-4z" fill="#fff"/></svg>';
+  var svgStar='<svg width="11" height="11" viewBox="0 0 24 24" fill="#f59e0b" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
+  var svgBolt='<svg width="11" height="11" viewBox="0 0 24 24" fill="#f59e0b" stroke="none"><path d="M13 2L3 14h9l-1 8 10-12h-9z"/></svg>';
+  var svgBack='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
+  var svgPlay='<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>';
+
+  // Come-back message
+  var comeBack=streak>0?'Return tomorrow to keep your '+streak+'-day streak alive!':'Play daily to build your streak!';
+
+  area.innerHTML=
+    '<div style="padding:14px">'
+    // Result card
+    +'<div style="background:linear-gradient(135deg,#0a0a1a,#0d1f12);border:1px solid rgba(34,197,94,.25);border-radius:18px;padding:20px;text-align:center;margin-bottom:12px;box-shadow:0 0 40px rgba(34,197,94,.1)">'
+    +'<div style="margin-bottom:10px">'+trophySVG+'</div>'
+    +'<div style="font-size:28px;font-weight:900;color:#fff;margin-bottom:2px">'+dcSession.score+' pts</div>'
+    +'<div style="font-size:11px;color:rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;gap:10px">'
+    +'<span style="display:flex;align-items:center;gap:3px">'+svgCheck+' '+correct+' correct</span>'
+    +'<span style="display:flex;align-items:center;gap:3px">'+svgX2+' '+wrong+' wrong</span>'
+    +(bonusTotal>0?'<span style="display:flex;align-items:center;gap:3px">'+svgBolt+' +'+bonusTotal+' bonus</span>':'')
+    +'</div>'
+    +'<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:12px">'
+    +'<span style="font-size:10px;background:rgba(245,158,11,.15);color:#fbbf24;border:1px solid rgba(245,158,11,.3);padding:4px 10px;border-radius:99px;font-weight:700;display:flex;align-items:center;gap:4px">'+svgFire+' '+streak+' Day Streak</span>'
+    +'<span style="font-size:10px;background:rgba(255,255,255,.08);color:'+lvl.color+';border:1px solid rgba(255,255,255,.12);padding:4px 10px;border-radius:99px;font-weight:700">'+lvl.name+'</span>'
+    +'<span style="font-size:10px;background:rgba(255,255,255,.08);color:#86efac;border:1px solid rgba(255,255,255,.12);padding:4px 10px;border-radius:99px;font-weight:700;display:flex;align-items:center;gap:4px">'+svgStar+' '+totalXP+' XP</span>'
+    +'</div>'
+    +'<div style="margin-top:10px;font-size:10px;color:rgba(255,255,255,.4);font-style:italic">'+comeBack+'</div>'
+    +'</div>'
+    // Tabs
+    +'<div style="display:flex;background:rgba(255,255,255,.06);border-radius:10px;padding:3px;margin-bottom:12px">'
+    +'<button id="dc-tab-review" data-tab="review" style="flex:1;padding:8px;border:none;border-radius:8px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.1);color:#fff">Review</button>'
+    +'<button id="dc-tab-lb" data-tab="lb" style="flex:1;padding:8px;border:none;border-radius:8px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;background:transparent;color:rgba(255,255,255,.5)">Leaderboard</button>'
+    +'</div>'
+    // Review panel
+    +'<div id="dc-panel-review">'
+    +dcSession.answers.map(function(a,i){
+      var border=a.ok?'#22c55e':'#ef4444';
+      var svgOk=a.ok
+        ?'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>'
+        :'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+      return '<div style="margin-bottom:8px;padding:11px 12px;background:rgba(255,255,255,.04);border:1.5px solid '+border+';border-radius:10px">'
+        +'<div style="font-size:11px;font-weight:700;color:#fff;margin-bottom:5px;line-height:1.5;display:flex;align-items:flex-start;gap:6px">'+svgOk+'<span>'+(i+1)+'. '+a.q+'</span></div>'
+        +'<div style="font-size:11px;color:'+(a.ok?'#86efac':'#fca5a5')+';font-weight:600">'+(a.ok?'Correct: ':'Your answer: ')+a.chosen+'</div>'
+        +(!a.ok?'<div style="font-size:11px;color:#86efac;margin-top:3px;font-weight:600">Correct: '+a.correct+'</div>':'')
+        +(a.bonus>0?'<div style="font-size:10px;color:#fbbf24;margin-top:2px">+'+a.bonus+' speed bonus</div>':'')
+        +'</div>';
+    }).join('')
+    +'</div>'
+    // LB panel
+    +'<div id="dc-panel-lb" style="display:none"><div id="dc-result-lb-inner">'+renderLBHTML()+'</div></div>'
+    // Buttons
+    +'<div style="display:flex;gap:8px;margin-top:14px">'
+    +'<button onclick="startDailyChallenge()" style="flex:1;padding:12px;background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;border:none;border-radius:12px;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">'+svgPlay+' Play Again</button>'
+    +'<button onclick="dcQuit()" style="flex:1;padding:12px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.15);border-radius:12px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">'+svgBack+' Back</button>'
+    +'</div></div>';
+
+  // Attach tab listeners
+  setTimeout(function(){
+    var btnR=document.getElementById('dc-tab-review');
+    var btnL=document.getElementById('dc-tab-lb');
+    if(btnR) btnR.addEventListener('click',function(){dcSwitchTab('review');});
+    if(btnL) btnL.addEventListener('click',function(){dcSwitchTab('lb');});
+  },0);
+}
+
+function dcSwitchTab(tab){
+  var rev=document.getElementById('dc-panel-review');
+  var lb=document.getElementById('dc-panel-lb');
+  var tbR=document.getElementById('dc-tab-review');
+  var tbL=document.getElementById('dc-tab-lb');
+  if(tab==='review'){
+    rev.style.display='block';lb.style.display='none';
+    tbR.style.background='rgba(255,255,255,.1)';tbR.style.color='#fff';
+    tbL.style.background='transparent';tbL.style.color='rgba(255,255,255,.5)';
+  } else {
+    rev.style.display='none';lb.style.display='block';
+    tbL.style.background='rgba(255,255,255,.1)';tbL.style.color='#fff';
+    tbR.style.background='transparent';tbR.style.color='rgba(255,255,255,.5)';
+    var inner=document.getElementById('dc-result-lb-inner');
+    if(inner){
+      inner.innerHTML='<div style="text-align:center;padding:16px;font-size:12px;color:rgba(255,255,255,.5)">Loading...</div>';
+      fetchServerLB().then(function(){if(inner)inner.innerHTML=renderLBHTML();});
+    }
+  }
+}
+
+/* Update streak/level badges on init */
+updateDCBadges();
+
+
+/* ── PLAYER NAME (standalone replacement for the main app's login) ── */
+var GK_NAME_KEY='gk-player-name', gkAfterName=null;
+function getPlayerName(){
+  var n=(localStorage.getItem(GK_NAME_KEY)||'').trim(); if(n) return n;
+  try{var s=JSON.parse(localStorage.getItem('dn-session-v3')||'null'); if(s) return (s.name||s.email||'').trim();}catch(e){}
+  return '';
+}
+function updatePlayerChip(){
+  var el=document.getElementById('gk-player-name'); if(el) el.textContent=getPlayerName()||'Guest';
+}
+function openNameModal(after){
+  gkAfterName=after||null;
+  var m=document.getElementById('gk-name-modal'),i=document.getElementById('gk-name-input');
+  i.value=getPlayerName(); m.style.display='flex'; setTimeout(function(){i.focus();},50);
+}
+function closeNameModal(){ document.getElementById('gk-name-modal').style.display='none'; gkAfterName=null; }
+function saveNameModal(){
+  var v=document.getElementById('gk-name-input').value.replace(/[<>&"'\\\/]/g,'').trim().slice(0,24);
+  if(!v){ document.getElementById('gk-name-input').focus(); return; }
+  localStorage.setItem(GK_NAME_KEY,v); updatePlayerChip();
+  var cb=gkAfterName; closeNameModal(); if(cb) cb();
+}
+updatePlayerChip();
+try{ startLBRealtime(); }catch(e){}
+
+</script>
+</body>
+</html>
