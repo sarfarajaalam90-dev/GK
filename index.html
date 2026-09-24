@@ -291,6 +291,8 @@ var YT_API_KEY='AIzaSyAqJ2ZM87PMwFx2jLR0w6HwiQTpOMP8uzY';      // <-- replace RE
 var YT_QUESTION_SECONDS=15;         // how long the question stays open for viewers (live mode)
 var YT_ANSWER_GRACE_MS=3000;        // 'calculating answers' time after the question closes
 var YT_BOT_COUNT=40;                // bot viewers used for testing when no YouTube link is entered
+var YT_FILL_VIEWERS=true;           // real YouTube live: show extra viewer ids next to the options until real viewers take their place
+var YT_FILL_TARGET=30;              // total viewers shown per question (real viewers + fillers); every real viewer replaces one filler
 var YT_MAX_CHIPS=5;                 // viewers shown (picture + name) next to each option; the rest become '+N more'
 var YT_RESULT_HOLD_MS=12000;        // how long results stay on screen before the next question
 var YT_MIN_POLL_MS=3000;            // never poll chat faster than this (saves API quota)
@@ -897,7 +899,7 @@ function dcAnnotateFinishBox(box){
    YOUTUBE LIVE CHAT ANSWERS  (viewers type A / B / C / D)
    ============================================================ */
 var ytLive=false, ytChatId='', ytPageToken='', ytRound=null;
-var ytBotsUsed=false, ytBots=false, ytBotPool=[], ytBotTimers=[], ytHistory={};
+var ytBotsUsed=false, ytBots=false, ytBotPool=[], ytBotTimers=[], ytHistory={}, ytFillPool=[];
 function ytOn(){ return ytLive||ytBots; }
 var ytLoopTimer=null, ytEndTimer=null, ytAdvanceTimer=null, ytInFlight=null, ytNextDelay=4000, ytLastToast=0;
 var ytAdvanceDeadline=0, ytAdvanceRemaining=0;
@@ -940,6 +942,7 @@ async function ytConnect(){
     var id=it&&it.liveStreamingDetails&&it.liveStreamingDetails.activeLiveChatId;
     if(!id){ ytToast('YouTube chat off: no active live chat found (is the stream live?)'); return false; }
     ytChatId=id; ytPageToken=''; ytLive=true; ytNextDelay=YT_MIN_POLL_MS;
+    ytMakeFillPool();
     ytLoop();
     return true;
   }catch(e){ ytToast('YouTube chat off: network error'); return false; }
@@ -1044,7 +1047,12 @@ function ytShowResults(r,correctText){
   var correctCount=(byOpt[r.correctIdx]||[]).length;
   var hist={};
   Object.keys(r.answers).forEach(function(k){ var a=r.answers[k]; hist[k]={id:k,name:a.name,pic:a.pic,ok:a.li===r.correctIdx,secs:Math.max(0,(a.t-r.start)/1000)}; });
-  ytHistory[dcSession.idx]=hist;
+  ytHistory[dcSession.idx]=hist;   // Top 10 uses real viewers only
+  if(ytLive&&!ytBots&&YT_FILL_VIEWERS){                       // real live: top up with filler ids (they always come after real viewers)
+    ytFillViewers(byOpt,r,total);
+    total=byOpt.reduce(function(n,l){return n+l.length;},0);
+    correctCount=(byOpt[r.correctIdx]||[]).length;
+  }
   dcTimeoutReveal(correctText,true);
   document.querySelectorAll('#dc-opts .yt-comp').forEach(function(n){ n.remove(); });   // "Computing…" disappears as pp + names appear
   var st=document.getElementById('dc-yt-status');
@@ -1071,9 +1079,38 @@ function ytShowResults(r,correctText){
   ytScheduleAdvance(YT_RESULT_HOLD_MS,r);
 }
 
+/* ── FILLER VIEWERS (real live only): natural-looking names, shown after the real viewers.
+      Every real viewer who answers replaces one filler, so the total stays at YT_FILL_TARGET.
+      They never enter the Top 10. ── */
+function ytMakeFillPool(){
+  var first=['Ram','Sita','Hari','Gita','Bikash','Kabita','Sunil','Anu','Mina','Dev','Prakash','Sabina','Rojan','Puja','Nabin','Sanjay','Rima','Kiran','Bibek','Asmita','Roshan','Samir','Nisha','Aayush','Sarita','Deepak','Manisha','Umesh','Laxmi','Bishal','Sushma','Pramila','Ganesh','Kamala','Nikita','Kalpana','Suraj','Anjali','Rajan','Sangita'];
+  var last=['Sharma','Thapa','Karki','Adhikari','Gurung','Rai','Shrestha','Poudel','Khadka','Bhandari','Magar','Basnet','Tamang','Koirala'];
+  var used={}; ytFillPool=[];
+  while(ytFillPool.length<YT_FILL_TARGET){
+    var n=first[Math.floor(Math.random()*first.length)]+' '+last[Math.floor(Math.random()*last.length)];
+    if(used[n]) continue; used[n]=1;
+    ytFillPool.push({id:'fill'+ytFillPool.length,name:n,skill:0.4+Math.random()*0.4});
+  }
+}
+function ytFillViewers(byOpt,r,realTotal){
+  var need=Math.max(0,YT_FILL_TARGET-realTotal); if(!need||!ytFillPool.length) return;
+  var pool=ytFillPool.slice().sort(function(){return Math.random()-.5;}).slice(0,need);
+  var T=YT_QUESTION_SECONDS*1000, add=[[],[],[],[]];
+  pool.forEach(function(f){
+    var li;
+    if(r.correctIdx>=0&&Math.random()<f.skill) li=r.correctIdx;
+    else { do{ li=Math.floor(Math.random()*4); }while(li===r.correctIdx); }
+    add[li].push({li:li,t:r.start+700+Math.random()*Math.max(200,T-1600),id:f.id,name:f.name,pic:''});
+  });
+  add.forEach(function(list,i){
+    list.sort(function(x,y){return x.t-y.t;});
+    byOpt[i]=byOpt[i].concat(list);                            // real viewers stay first
+  });
+}
+
 /* ── BOT VIEWERS (test mode when no YouTube link is entered) ── */
 function ytBotBg(id){
-  var m=String(id||'').match(/^bot(\d+)$/); if(!m) return '';
+  var m=String(id||'').match(/^(?:bot|fill)(\d+)$/); if(!m) return '';
   return ' style="background:hsl('+((parseInt(m[1],10)*47)%360)+',55%,38%)"';
 }
 function ytClearBots(){ ytBotTimers.forEach(function(t){clearTimeout(t);}); ytBotTimers=[]; }
