@@ -174,7 +174,7 @@ html,body{min-height:100%;font-family:'Plus Jakarta Sans',sans-serif;background:
 #dc-game-area .dc-qwrap #dc-question-box{flex:1 1 auto;min-height:22vh;margin-bottom:clamp(24px,3.6vh,40px)!important}
 #dc-game-area .dc-qwrap #dc-opts{flex:1.25 1 auto;grid-auto-rows:1fr;margin-top:0;gap:clamp(24px,3.2vh,32px) clamp(18px,2vw,28px)}
 /* result screen: question stays compact, the 4 answer rows stretch down to the bottom */
-#dc-game-area.dc-results .dc-qwrap #dc-question-box{flex:0 0 auto;margin-bottom:clamp(16px,2.4vh,26px)!important}
+#dc-game-area.dc-results .dc-qwrap #dc-question-box{flex:0 0 auto;min-height:16vh!important;padding-top:24px!important;padding-bottom:24px!important;font-size:clamp(22px,2.5vw,36px)!important;margin-bottom:clamp(16px,2.4vh,26px)!important}
 #dc-game-area.dc-results .dc-qwrap #dc-opts.dc-rows{flex:1 1 auto;margin-top:0!important;row-gap:clamp(18px,2.6vh,26px)!important}
 /* stronger 3D: glossy top, shaded bottom, solid ledge (thickness) + deep drop shadow */
 #dc-question-box{
@@ -187,6 +187,13 @@ html,body{min-height:100%;font-family:'Plus Jakarta Sans',sans-serif;background:
 #dc-opts button:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 1px 0 rgba(255,255,255,.08) inset,0 -4px 8px rgba(0,0,0,.16) inset,0 4px 0 rgba(0,0,0,.26),0 10px 17px rgba(0,0,0,.38)}
 #dc-opts button:not(:disabled):active{transform:translateY(3px);box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 -3px 6px rgba(0,0,0,.24) inset,0 0 0 rgba(0,0,0,.26),0 3px 6px rgba(0,0,0,.3)}
 @media(max-width:640px){#dc-game-area .dc-qwrap #dc-question-box{min-height:0;margin-bottom:22px!important}#dc-game-area .dc-qwrap #dc-opts{gap:20px}}
+
+.yt-computing{font-weight:700;font-size:clamp(15px,1.5vw,24px);letter-spacing:.3px;color:rgba(255,255,255,.65);animation:ytPulse 1.3s ease-in-out infinite}
+.yt-computing i{font-style:normal;animation:ytDot 1.3s infinite both}
+.yt-computing i:nth-child(2){animation-delay:.2s}
+.yt-computing i:nth-child(3){animation-delay:.4s}
+@keyframes ytPulse{0%,100%{opacity:.5}50%{opacity:1}}
+@keyframes ytDot{0%,20%{opacity:0}50%{opacity:1}100%{opacity:0}}
 
 /* wrong options after the answer is revealed: soft red, not full red */
 #dc-opts button.dc-wrong{background-color:rgba(220,38,38,.42)!important;border-color:rgba(248,113,113,.8)!important;color:#fff!important}
@@ -1007,22 +1014,27 @@ function ytRoundEnd(correctText){
     ytShowResults(r,correctText);
   },YT_ANSWER_GRACE_MS);
 }
-/* Slide the 2x2 options into full-width horizontal rows (FLIP animation) */
+/* Switch the 2x2 options into rows with a clean fade-through (no sliding / squashing boxes),
+   and show a "Computing…" label on the right of every option while the answers are being counted */
 function ytLayoutRows(){
   var area=document.getElementById('dc-game-area'), opts=document.getElementById('dc-opts'), qb=document.getElementById('dc-question-box');
   if(!area||!opts||!qb) return;
-  var els=[qb].concat([].slice.call(opts.querySelectorAll('button')));
-  var first=els.map(function(e){return e.getBoundingClientRect();});
-  area.classList.add('dc-results'); opts.classList.add('dc-rows');
-  [].slice.call(opts.querySelectorAll('button')).forEach(function(b,i){ b.style.gridRow=String(i+1); });
-  els.forEach(function(e,i){
-    if(!e.animate) return;
-    var a=first[i], b=e.getBoundingClientRect();
-    e.animate([
-      {transform:'translate('+(a.left-b.left)+'px,'+(a.top-b.top)+'px)',width:a.width+'px',height:a.height+'px'},
-      {transform:'translate(0px,0px)',width:b.width+'px',height:b.height+'px'}
-    ],{duration:700,easing:'cubic-bezier(.22,1,.36,1)'});
-  });
+  var fade=[qb,opts], canFade=!!qb.animate;
+  var outs=canFade?fade.map(function(e){ return e.animate([{opacity:1},{opacity:0}],{duration:150,easing:'ease-in',fill:'forwards'}); }):[];
+  setTimeout(function(){
+    if(document.getElementById('dc-opts')!==opts) return;          // host already moved to another question
+    area.classList.add('dc-results'); opts.classList.add('dc-rows');
+    [].slice.call(opts.querySelectorAll('button')).forEach(function(b,i){
+      b.style.gridRow=String(i+1);
+      b.insertAdjacentHTML('afterend','<div class="yt-side yt-comp" style="grid-row:'+(i+1)+'"><span class="yt-computing">Computing<i>.</i><i>.</i><i>.</i></span></div>');
+    });
+    if(canFade){
+      outs.forEach(function(an){ an.cancel(); });
+      fade.forEach(function(e){
+        e.animate([{opacity:0,transform:'translateY(10px)'},{opacity:1,transform:'translateY(0)'}],{duration:340,easing:'cubic-bezier(.22,1,.36,1)'});
+      });
+    }
+  },160);
 }
 
 function ytShowResults(r,correctText){
@@ -1034,6 +1046,7 @@ function ytShowResults(r,correctText){
   Object.keys(r.answers).forEach(function(k){ var a=r.answers[k]; hist[k]={id:k,name:a.name,pic:a.pic,ok:a.li===r.correctIdx,secs:Math.max(0,(a.t-r.start)/1000)}; });
   ytHistory[dcSession.idx]=hist;
   dcTimeoutReveal(correctText,true);
+  document.querySelectorAll('#dc-opts .yt-comp').forEach(function(n){ n.remove(); });   // "Computing…" disappears as pp + names appear
   var st=document.getElementById('dc-yt-status');
   if(st) st.textContent=(ytBots?'TEST • ':'')+(total===0?'No answers':total+' answered • '+correctCount+' correct');
 
