@@ -132,25 +132,23 @@ html,body{min-height:100%;font-family:'Plus Jakarta Sans',sans-serif;background:
   #dc-opts .dc-letter{width:30px!important;height:30px!important;font-size:12px!important}
 }
 
-/* ── YOUTUBE LIVE: horizontal rows + viewers ── */
+/* ── YOUTUBE LIVE: half-width option rows + viewers on the right ── */
 #dc-question-box{transition:font-size .6s ease}
 #dc-game-area.dc-results #dc-question-box{min-height:12vh!important;padding-top:14px!important;padding-bottom:14px!important;margin-bottom:18px!important;font-size:clamp(20px,2.2vw,32px)!important}
-#dc-opts.dc-rows{grid-template-columns:1fr!important;gap:12px!important}
-#dc-opts.dc-rows button{min-height:clamp(64px,9.5vh,96px)!important;padding:8px 22px!important;gap:16px!important}
-#dc-opts.dc-rows button > span:nth-child(2){flex:0 1 34%}
-.yt-who{margin-left:auto;display:flex;align-items:center;gap:clamp(8px,1vw,16px);min-width:0;overflow:hidden}
-.yt-chip{display:flex;align-items:center;gap:8px;min-width:0;opacity:0;animation:ytIn .55s ease forwards}
-.yt-av2{position:relative;flex:none;width:clamp(34px,3.2vw,46px);height:clamp(34px,3.2vw,46px);border-radius:50%;overflow:hidden;border:2px solid rgba(255,255,255,.7);background:#1a6b3c;color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:clamp(13px,1.2vw,18px)}
-.yt-av2 img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.yt-tx{display:flex;flex-direction:column;min-width:0;line-height:1.25}
-.yt-nm2{max-width:clamp(60px,6vw,96px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:clamp(11px,1vw,15px);font-weight:700;color:#fff}
-.yt-tm2{font-size:clamp(9px,.8vw,12px);font-weight:700;color:rgba(255,255,255,.7)}
-.yt-plus{flex:none;opacity:0;animation:ytIn .55s ease forwards;min-width:clamp(34px,3.2vw,46px);height:clamp(34px,3.2vw,46px);padding:0 8px;border-radius:99px;background:rgba(245,158,11,.22);border:2px solid #f59e0b;color:#fbbf24;font-weight:900;display:flex;align-items:center;justify-content:center;font-size:clamp(12px,1.1vw,17px)}
-@keyframes ytIn{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}
-.yt-count{flex:none;min-width:74px;text-align:right;font-weight:800;color:#fff;white-space:nowrap}
+#dc-opts.dc-rows{grid-template-columns:minmax(0,46%) minmax(0,1fr)!important;column-gap:clamp(16px,2vw,32px)!important;row-gap:12px!important}
+#dc-opts.dc-rows button{grid-column:1!important;min-height:clamp(72px,10vh,100px)!important;padding:8px 20px!important;gap:14px!important}
+#dc-opts.dc-rows button > span:nth-child(2){flex:1 1 auto;min-width:0}
+.yt-count{margin-left:auto;flex:none;min-width:70px;text-align:right;font-weight:800;color:#fff;white-space:nowrap}
 .yt-count small{font-size:.65em;opacity:.75;font-weight:700}
 .yt-bar{position:absolute;left:0;bottom:0;height:6px;background:rgba(255,255,255,.6);border-radius:0 3px 3px 0;transition:width .8s ease}
-@media(max-width:900px){.yt-tx{display:none}}
+.yt-side{grid-column:2;display:flex;align-items:center;gap:clamp(10px,1.3vw,20px);min-width:0;overflow:hidden}
+.yt-chip{display:flex;flex-direction:column;align-items:center;gap:4px;flex:none;width:clamp(58px,5.8vw,84px);opacity:0;animation:ytIn .55s ease forwards}
+.yt-av2{position:relative;width:clamp(38px,3.7vw,54px);height:clamp(38px,3.7vw,54px);border-radius:50%;overflow:hidden;border:2px solid rgba(255,255,255,.75);background:#1a6b3c;color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:clamp(14px,1.3vw,20px)}
+.yt-av2 img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.yt-nm2{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:clamp(10px,.9vw,13px);font-weight:700;color:rgba(255,255,255,.92)}
+.yt-more2{flex:none;white-space:nowrap;font-weight:800;color:#fbbf24;font-size:clamp(13px,1.3vw,20px);opacity:0;animation:ytIn .55s ease forwards}
+@keyframes ytIn{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}
+@media(max-width:640px){#dc-opts.dc-rows{grid-template-columns:1fr!important}#dc-opts.dc-rows button{grid-column:1!important;grid-row:auto!important}.yt-side{grid-column:1;grid-row:auto!important;padding:6px 0 10px}}
 </style>
 </head>
 <body>
@@ -221,6 +219,7 @@ var S2_URL=DC_SHEET_URL; // S2 — Daily Challenge quiz questions
 var YT_API_KEY='AIzaSyAqJ2ZM87PMwFx2jLR0w6HwiQTpOMP8uzY';      // <-- replace REPLACE ME with your YouTube Data API v3 key
 var YT_QUESTION_SECONDS=15;         // how long the question stays open for viewers (live mode)
 var YT_ANSWER_GRACE_MS=3000;        // 'calculating answers' time after the question closes
+var YT_MAX_CHIPS=5;                 // viewers shown (picture + name) next to each option; the rest become '+N more'
 var YT_RESULT_HOLD_MS=12000;        // how long results stay on screen before the next question
 var YT_MIN_POLL_MS=3000;            // never poll chat faster than this (saves API quota)
 var DC_STORE_KEY='dn-dc-v1';
@@ -477,17 +476,18 @@ function renderDCQuestion(){
 
   area.innerHTML=
     '<div style="padding:4px 14px 4px">'
-    // Logo + app name row
-    +'<div style="display:flex;align-items:center;justify-content:center;gap:7px;margin:2px 0 2px">'
-    +'<img src="'+DC_LOGO_URI+'" alt="" style="width:32px;height:32px;display:block;flex-shrink:0">'
-    +'<span style="font-size:13px;font-weight:800;color:#fff;letter-spacing:.2px">Shikshit Mitra</span>'
-    +'</div>'
-    // Header row: question label (left) | timer (center)
-    +'<div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;margin-bottom:12px">'
+    // Header row: question label (left) | logo + name (center) | answer count + timer (right)
+    +'<div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;margin:2px 0 12px">'
     +'<div id="dc-prog-label" style="font-size:11px;font-weight:700;color:rgba(255,255,255,.6)">'+progLabel+'</div>'
+    +'<div style="display:flex;align-items:center;justify-content:center;gap:9px">'
+    +'<img src="'+DC_LOGO_URI+'" alt="" style="width:42px;height:42px;display:block;flex-shrink:0">'
+    +'<span style="font-size:17px;font-weight:800;color:#fff;letter-spacing:.2px">Shikshit Mitra</span>'
+    +'</div>'
+    +'<div style="display:flex;align-items:center;justify-content:flex-end;gap:14px">'
+    +'<div id="dc-yt-status" style="text-align:right;font-size:12px;font-weight:700;color:rgba(255,255,255,.4)"></div>'
     +'<div id="dc-timer-ring" style="display:inline-flex;align-items:center;justify-content:center;width:54px;height:54px;border-radius:50%;border:3px solid #22c55e;font-size:20px;font-weight:800;color:#22c55e;transition:border-color .5s,color .5s;background:rgba(34,197,94,.08)">'
     +'<span id="dc-timer-num">'+dcTotalTime+'</span></div>'
-    +'<div id="dc-yt-status" style="text-align:right;font-size:12px;font-weight:700;color:rgba(255,255,255,.4)"></div>'
+    +'</div>'
     +'</div>'
     // Question box
     +'<div id="dc-question-box" style="background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);border-radius:14px;padding:14px;margin-bottom:16px;font-size:13px;font-weight:700;color:#fff;line-height:1.6">'+q.q+'</div>'
@@ -671,6 +671,7 @@ function ytLayoutRows(){
   var els=[qb].concat([].slice.call(opts.querySelectorAll('button')));
   var first=els.map(function(e){return e.getBoundingClientRect();});
   area.classList.add('dc-results'); opts.classList.add('dc-rows');
+  [].slice.call(opts.querySelectorAll('button')).forEach(function(b,i){ b.style.gridRow=String(i+1); });
   els.forEach(function(e,i){
     if(!e.animate) return;
     var a=first[i], b=e.getBoundingClientRect();
@@ -692,17 +693,17 @@ function ytShowResults(r,correctText){
 
   document.querySelectorAll('#dc-opts button').forEach(function(b,i){
     var list=byOpt[i]||[], c=list.length, pct=total?Math.round(c*100/total):0;
-    var shown=list.slice(0,5), more=c-shown.length;
+    var shown=list.slice(0,YT_MAX_CHIPS), more=c-shown.length;
     var chips=shown.map(function(a,n){
-      var secs=Math.max(0,(a.t-r.start)/1000).toFixed(1);
       var init=ytEsc((a.name||'?').replace(/^@/,'').charAt(0).toUpperCase());
       var img=/^https:\/\//.test(a.pic)?'<img src="'+ytEsc(a.pic)+'" referrerpolicy="no-referrer" alt="" onerror="this.style.display=\'none\'">':'';
       return '<span class="yt-chip" style="animation-delay:'+(n*140)+'ms"><span class="yt-av2">'+init+img+'</span>'
-        +'<span class="yt-tx"><span class="yt-nm2">'+ytEsc(a.name)+'</span><span class="yt-tm2">'+secs+'s</span></span></span>';
+        +'<span class="yt-nm2">'+ytEsc(a.name)+'</span></span>';
     }).join('');
-    if(more>0) chips+='<span class="yt-plus" style="animation-delay:'+(shown.length*140)+'ms">+'+more+'</span>';
+    if(more>0) chips+='<span class="yt-more2" style="animation-delay:'+(shown.length*140)+'ms">+'+more+' more</span>';
     b.style.position='relative'; b.style.overflow='hidden';
-    b.insertAdjacentHTML('beforeend','<span class="yt-who">'+chips+'</span><span class="yt-count">'+c+' <small>'+pct+'%</small></span><span class="yt-bar" style="width:0"></span>');
+    b.insertAdjacentHTML('beforeend','<span class="yt-count">'+c+' <small>'+pct+'%</small></span><span class="yt-bar" style="width:0"></span>');
+    b.insertAdjacentHTML('afterend','<div class="yt-side" style="grid-row:'+(i+1)+'">'+chips+'</div>');
     var bar=b.querySelector('.yt-bar');
     setTimeout(function(){ if(bar) bar.style.width=pct+'%'; },60);
   });
