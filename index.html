@@ -1450,7 +1450,7 @@ dcTimerInit();
 /* ── OPTIONAL VIDEO BACKGROUND: put a file named bg.mp4 next to this page (silent loop, e.g. Earth at night).
       If the file is missing nothing breaks — the page just keeps its normal dark background. ── */
 (function(){
-  var BG_VIDEO={src:'bg.mp4',opacity:.5,speed:1};     // opacity: 0.3 = very faint … 0.7 = strong · speed: 1 normal, 1.5 = fast-forward
+  var BG_VIDEO={src:'bg.mp4',opacity:.35,speed:1};     // opacity: 0.3 = very faint … 0.7 = strong · speed: 1 normal, 1.5 = fast-forward
   var box=document.querySelector('.wave-container'); if(!box||!BG_VIDEO.src) return;
   var v=document.createElement('video'), shade=document.createElement('div');
   v.className='bg-video'; shade.className='bg-video-shade';
