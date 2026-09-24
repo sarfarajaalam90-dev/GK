@@ -131,6 +131,23 @@ html,body{min-height:100%;font-family:'Plus Jakarta Sans',sans-serif;background:
   #dc-opts button{min-height:0;padding:12px 14px!important}
   #dc-opts .dc-letter{width:30px!important;height:30px!important;font-size:12px!important}
 }
+
+/* ── YOUTUBE RESULTS ── */
+#dc-game-area.dc-results #dc-question-box{min-height:12vh!important;padding-top:14px!important;padding-bottom:14px!important;margin-bottom:18px!important;font-size:clamp(20px,2.2vw,32px)!important}
+#dc-game-area.dc-results #dc-opts{gap:12px clamp(16px,2vw,28px)}
+#dc-game-area.dc-results #dc-opts button{min-height:9vh!important;padding-top:10px!important;padding-bottom:10px!important}
+.yt-count{margin-left:auto;font-weight:800;color:#fff;white-space:nowrap}
+.yt-count small{font-size:.65em;opacity:.75;font-weight:700}
+.yt-bar{position:absolute;left:0;bottom:0;height:6px;background:rgba(255,255,255,.6);border-radius:0 3px 3px 0}
+#dc-yt-results{margin-top:clamp(14px,2.4vh,26px);text-align:center}
+.yt-head{font-size:clamp(12px,1vw,15px);font-weight:700;color:rgba(255,255,255,.65);margin-bottom:10px}
+.yt-row{display:flex;justify-content:center;align-items:flex-start;gap:clamp(12px,2vw,28px);flex-wrap:wrap}
+.yt-card{width:clamp(88px,9vw,130px);text-align:center}
+.yt-av{position:relative;width:clamp(44px,4.4vw,64px);height:clamp(44px,4.4vw,64px);border-radius:50%;margin:0 auto 6px;overflow:hidden;border:2px solid #22c55e;background:#1a6b3c;color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:clamp(16px,1.6vw,24px)}
+.yt-av img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.yt-nm{font-size:clamp(12px,1.05vw,16px);font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.yt-tm{font-size:clamp(10px,.85vw,13px);font-weight:700;color:#86efac}
+.yt-more{width:clamp(44px,4.4vw,64px);height:clamp(44px,4.4vw,64px);border-radius:50%;background:rgba(245,158,11,.18);border:2px solid #f59e0b;color:#f59e0b;font-weight:900;display:flex;align-items:center;justify-content:center;font-size:clamp(14px,1.4vw,20px)}
 </style>
 </head>
 <body>
@@ -181,7 +198,13 @@ html,body{min-height:100%;font-family:'Plus Jakarta Sans',sans-serif;background:
             </div>
             <div style="color:rgba(255,255,255,.6);font-size:22px;position:relative;z-index:1"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
           </div>
-                    </div><!-- end game-menu -->
+                    <div style="padding:12px 14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:14px">
+            <div style="font-size:10px;font-weight:800;color:rgba(255,255,255,.5);letter-spacing:1px;margin-bottom:6px">YOUTUBE LIVE (OPTIONAL)</div>
+            <input id="yt-video-input" placeholder="Paste your live video link or ID" oninput="localStorage.setItem('gk-yt-video',this.value.trim())"
+              style="width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.07);color:#fff;font-family:inherit;font-size:12px;font-weight:600;outline:none">
+            <div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:6px;font-weight:600">Viewers answer A / B / C / D in the live chat. Leave empty to play normally.</div>
+          </div>
+        </div><!-- end game-menu -->
         <div id="dc-game-area" style="display:none"></div>
 </div>
 
@@ -191,6 +214,11 @@ html,body{min-height:100%;font-family:'Plus Jakarta Sans',sans-serif;background:
    ============================================================ */
 var DC_SHEET_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vSvboPbqXSBqbMR5UilxgOyrLvrSsxHl45mTxw6DH8DDnK1sRw_X9qIcke2Wi6zSgX4bv0gyA1hmyE-/pub?gid=0&single=true&output=csv';
 var S2_URL=DC_SHEET_URL; // S2 — Daily Challenge quiz questions
+/* ── YOUTUBE LIVE CHAT SETTINGS ── */
+var YT_API_KEY='REPLACE ME';        // <-- replace REPLACE ME with your YouTube Data API v3 key
+var YT_ANSWER_GRACE_MS=5000;        // extra time after the timer ends to catch delayed chat messages
+var YT_RESULT_HOLD_MS=12000;        // how long results stay on screen before the next question
+var YT_MIN_POLL_MS=3000;            // never poll chat faster than this (saves API quota)
 var DC_STORE_KEY='dn-dc-v1';
 var DC_LB_KEY='dn-dc-lb-v1';
 var dcQuestions=[],dcSession={q:[],idx:0,score:0,xp:0,answers:[],startTime:0},dcTimer=null,dcTimeLeft=30;
@@ -352,6 +380,7 @@ async function startDailyChallenge(){
   area.style.display='block';
   area.innerHTML='<div style="padding:40px;text-align:center"><div class="spinner" style="border-top-color:#22c55e;border-color:rgba(255,255,255,.15);margin:0 auto 12px"></div><div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.6)">Loading questions...</div></div>';
   try{
+    await ytConnect();
     var rows=await fetchDCSheet();
     if(!rows||rows.length<1){
       area.innerHTML='<div class="empty-box" style="margin:20px 14px"><b>0 questions loaded.</b><br><small>Sheet may still be loading or has formatting issues. Wait 10 seconds and try again.</small></div>'
@@ -452,7 +481,7 @@ function renderDCQuestion(){
     +'<div id="dc-prog-label" style="font-size:11px;font-weight:700;color:rgba(255,255,255,.6)">'+progLabel+'</div>'
     +'<div id="dc-timer-ring" style="display:inline-flex;align-items:center;justify-content:center;width:54px;height:54px;border-radius:50%;border:3px solid #22c55e;font-size:20px;font-weight:800;color:#22c55e;transition:border-color .5s,color .5s;background:rgba(34,197,94,.08)">'
     +'<span id="dc-timer-num">30</span></div>'
-    +'<div></div>'
+    +'<div id="dc-yt-status" style="text-align:right;font-size:12px;font-weight:700;color:rgba(255,255,255,.4)"></div>'
     +'</div>'
     // Question box
     +'<div id="dc-question-box" style="background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);border-radius:14px;padding:14px;margin-bottom:16px;font-size:13px;font-weight:700;color:#fff;line-height:1.6">'+q.q+'</div>'
@@ -472,6 +501,7 @@ function renderDCQuestion(){
     +'<button class="gk-ghost" id="dc-next-btn" onclick="dcNextQuestion()" aria-label="Next question" style="right:14px;top:14px;bottom:auto;color:rgba(255,255,255,'+(nextDisabled?'.12':'.55')+');cursor:'+(nextDisabled?'default':'pointer')+'" '+(nextDisabled?'disabled':'')+'>'+svgChevR+'</button>';
 
   dcStartTick(correctText);
+  ytRoundStart(opts.map(function(o){return o.text;}),correctText);
 }
 
 function dcPrevQuestion(){
@@ -502,7 +532,7 @@ function dcStartTick(correctText){
       playDCSound('wrong');
       dcSession.score-=2;
       dcSession.answers.push({q:dcSession.q[dcSession.idx].q,chosen:'(Time Out)',correct:correctText,ok:false,bonus:0});
-      dcTimeoutReveal(correctText);
+      if(ytLive&&ytRound){ ytRoundEnd(correctText); } else { dcTimeoutReveal(correctText); }
     }
   },1000);
 }
@@ -516,9 +546,154 @@ function toggleDCPause(){
   else { dcPaused=true; clearInterval(dcTimer); b.innerHTML=DC_SVG_PLAY; }
 }
 
+
+/* ============================================================
+   YOUTUBE LIVE CHAT ANSWERS  (viewers type A / B / C / D)
+   ============================================================ */
+var ytLive=false, ytChatId='', ytPageToken='', ytRound=null;
+var ytLoopTimer=null, ytEndTimer=null, ytAdvanceTimer=null, ytInFlight=null, ytNextDelay=4000, ytLastToast=0;
+
+function ytEsc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function ytToast(msg){
+  var now=Date.now(); if(now-ytLastToast<4000) return; ytLastToast=now;
+  var t=document.createElement('div'); t.textContent=msg;
+  t.style.cssText='position:fixed;bottom:70px;left:50%;transform:translateX(-50%);max-width:80vw;background:#7f1d1d;color:#fff;font-size:12px;font-weight:700;padding:9px 16px;border-radius:12px;z-index:9999;pointer-events:none;text-align:center';
+  document.body.appendChild(t); setTimeout(function(){t.remove();},6000);
+}
+function ytParseVideoId(s){
+  s=(s||'').trim(); if(!s) return '';
+  var m=s.match(/(?:v=|youtu\.be\/|\/live\/|\/embed\/|\/shorts\/)([A-Za-z0-9_-]{11})/);
+  if(m) return m[1];
+  return /^[A-Za-z0-9_-]{11}$/.test(s)?s:'';
+}
+function ytParseAnswer(txt){
+  var m=String(txt||'').trim().match(/^(?:(?:option|ans(?:wer)?)\s*[:\-]?\s*)?[\(\[]?([abcd1-4])[\)\]]?[\s.:!,\-]*$/i);
+  if(!m) return -1;
+  var c=m[1].toLowerCase();
+  return 'abcd'.indexOf(c)>=0 ? 'abcd'.indexOf(c) : parseInt(c,10)-1;
+}
+
+async function ytConnect(){
+  ytStop();
+  var vid=ytParseVideoId(localStorage.getItem('gk-yt-video')||'');
+  if(!vid) return false;                       // no video entered -> normal game
+  if(!YT_API_KEY||YT_API_KEY==='REPLACE ME'){ ytToast('YouTube chat off: put your API key in YT_API_KEY (search REPLACE ME in the code)'); return false; }
+  try{
+    var r=await fetch('https://www.googleapis.com/youtube/v3/videos?part=liveStreamingDetails&id='+encodeURIComponent(vid)+'&key='+encodeURIComponent(YT_API_KEY));
+    var d=await r.json();
+    if(d.error){ ytToast('YouTube chat off: '+String(d.error.message||'API error').slice(0,90)); return false; }
+    var it=d.items&&d.items[0];
+    var id=it&&it.liveStreamingDetails&&it.liveStreamingDetails.activeLiveChatId;
+    if(!id){ ytToast('YouTube chat off: no active live chat found (is the stream live?)'); return false; }
+    ytChatId=id; ytPageToken=''; ytLive=true; ytNextDelay=YT_MIN_POLL_MS;
+    ytLoop();
+    return true;
+  }catch(e){ ytToast('YouTube chat off: network error'); return false; }
+}
+function ytStop(){
+  ytLive=false; ytRound=null;
+  clearTimeout(ytLoopTimer); clearTimeout(ytEndTimer); clearTimeout(ytAdvanceTimer);
+}
+function ytLoop(){
+  clearTimeout(ytLoopTimer);
+  if(!ytLive) return;
+  ytPollOnce().then(function(){ if(ytLive) ytLoopTimer=setTimeout(ytLoop,ytNextDelay); });
+}
+function ytPollOnce(){
+  if(ytInFlight) return ytInFlight;
+  ytInFlight=(async function(){
+    try{
+      var url='https://www.googleapis.com/youtube/v3/liveChat/messages?liveChatId='+encodeURIComponent(ytChatId)
+        +'&part=snippet,authorDetails&maxResults=200&key='+encodeURIComponent(YT_API_KEY)
+        +(ytPageToken?'&pageToken='+encodeURIComponent(ytPageToken):'');
+      var r=await fetch(url); var d=await r.json();
+      if(d.error){
+        var reason=(d.error.errors&&d.error.errors[0]&&d.error.errors[0].reason)||'';
+        if(reason==='liveChatEnded'||reason==='liveChatNotFound'||reason==='quotaExceeded'||reason==='forbidden'){
+          ytToast('YouTube chat stopped: '+(d.error.message||reason).slice(0,90)); ytLive=false; return;
+        }
+        ytPageToken=''; ytNextDelay=8000; return;   // temporary problem: retry later
+      }
+      if(d.nextPageToken) ytPageToken=d.nextPageToken;
+      ytNextDelay=Math.max(d.pollingIntervalMillis||YT_MIN_POLL_MS,YT_MIN_POLL_MS);
+      ytHandleItems(d.items||[]);
+    }catch(e){ ytNextDelay=8000; }
+  })().then(function(){ytInFlight=null;},function(){ytInFlight=null;});
+  return ytInFlight;
+}
+function ytHandleItems(items){
+  var r=ytRound; if(!r) return;
+  items.forEach(function(it){
+    var sn=it.snippet||{}, au=it.authorDetails||{};
+    if(sn.type!=='textMessageEvent'||!au.channelId) return;
+    var t=Date.parse(sn.publishedAt);
+    if(!(t>=r.start)||t>r.deadline) return;         // only answers sent while this question was open
+    if(r.answers[au.channelId]) return;             // first answer per viewer counts
+    var li=ytParseAnswer(sn.displayMessage);
+    if(li<0||li>3) return;
+    r.answers[au.channelId]={li:li,t:t,name:au.displayName||'Viewer',pic:au.profileImageUrl||''};
+  });
+  var st=document.getElementById('dc-yt-status');
+  if(st&&!r.ending) st.textContent=Object.keys(r.answers).length+' answered';
+}
+
+function ytRoundStart(optTexts,correctText){
+  clearTimeout(ytEndTimer); clearTimeout(ytAdvanceTimer);
+  var area=document.getElementById('dc-game-area'); if(area) area.classList.remove('dc-results');
+  if(!ytLive){ ytRound=null; return; }
+  var ci=-1, want=String(correctText).toLowerCase().trim();
+  optTexts.forEach(function(t,i){ if(String(t).toLowerCase().trim()===want) ci=i; });
+  ytRound={start:Date.now(),deadline:Infinity,correctIdx:ci,answers:{},ending:false};
+}
+function ytRoundEnd(correctText){
+  var r=ytRound; if(!r||r.ending) return;
+  r.ending=true; r.deadline=Date.now()+YT_ANSWER_GRACE_MS;
+  var st=document.getElementById('dc-yt-status'); if(st) st.textContent='Counting answers…';
+  var num=document.getElementById('dc-timer-num'); if(num) num.textContent='…';
+  ytEndTimer=setTimeout(async function(){
+    if(ytInFlight) await ytInFlight;
+    await ytPollOnce();                              // one last fetch so late messages are included
+    if(ytRound!==r) return;                          // host moved to another question meanwhile
+    ytShowResults(r,correctText);
+  },YT_ANSWER_GRACE_MS);
+}
+function ytShowResults(r,correctText){
+  var counts=[0,0,0,0], correctList=[], total=0;
+  Object.keys(r.answers).forEach(function(k){
+    var a=r.answers[k]; counts[a.li]++; total++;
+    if(a.li===r.correctIdx) correctList.push(a);
+  });
+  correctList.sort(function(a,b){return a.t-b.t;});   // fastest first
+  dcTimeoutReveal(correctText,true);
+  var area=document.getElementById('dc-game-area'); if(area) area.classList.add('dc-results');
+  var st=document.getElementById('dc-yt-status'); if(st) st.textContent='';
+
+  document.querySelectorAll('#dc-opts button').forEach(function(b,i){
+    var c=counts[i]||0, pct=total?Math.round(c*100/total):0;
+    b.style.position='relative'; b.style.overflow='hidden';
+    b.insertAdjacentHTML('beforeend','<span class="yt-count">'+c+' <small>'+pct+'%</small></span><span class="yt-bar" style="width:'+pct+'%"></span>');
+  });
+
+  var top=correctList.slice(0,5), more=correctList.length-top.length;
+  var head=total===0?'No answers came in from chat'
+    :total+' answered &bull; '+correctList.length+' correct'+(correctList.length===0?' &mdash; nobody got it':'');
+  var cards=top.map(function(a){
+    var secs=Math.max(0,(a.t-r.start)/1000).toFixed(1);
+    var init=ytEsc((a.name||'?').replace(/^@/,'').charAt(0).toUpperCase());
+    var img=/^https:\/\//.test(a.pic)?'<img src="'+ytEsc(a.pic)+'" referrerpolicy="no-referrer" alt="" onerror="this.style.display=\'none\'">':'';
+    return '<div class="yt-card"><div class="yt-av">'+init+img+'</div><div class="yt-nm">'+ytEsc(a.name)+'</div><div class="yt-tm">'+secs+'s</div></div>';
+  }).join('');
+  if(more>0) cards+='<div class="yt-more">+'+more+'</div>';
+  var opts=document.getElementById('dc-opts');
+  if(opts) opts.insertAdjacentHTML('afterend','<div id="dc-yt-results"><div class="yt-head">'+head+'</div><div class="yt-row">'+cards+'</div></div>');
+
+  ytAdvanceTimer=setTimeout(function(){ if(ytRound===r) dcNext(); },YT_RESULT_HOLD_MS);
+}
+
 function escQ(s){return (s||'').replace(/'/g,'&#39;').replace(/"/g,'&quot;');}
 
 function dcAnswer(btn,chosen,correct){
+  if(ytLive) return; // live mode: answers come from YouTube chat
   if(dcPaused) return;
   clearInterval(dcTimer);
   var ok=(chosen.toLowerCase().trim()===correct.toLowerCase().trim());
@@ -576,7 +751,7 @@ function dcAnswer(btn,chosen,correct){
   setTimeout(function(){dcNext();},ok?750:1000);
 }
 
-function dcTimeoutReveal(correct){
+function dcTimeoutReveal(correct,noAdvance){
   var opts=document.getElementById('dc-opts');
   if(opts) opts.querySelectorAll('button').forEach(function(b){
     var dataVal=b.getAttribute('data-val')||'';
@@ -587,7 +762,7 @@ function dcTimeoutReveal(correct){
       if(dl){dl.style.background='rgba(255,255,255,.25)';dl.style.color='#fff';}
     }
   });
-  setTimeout(function(){dcNext();},900);
+  if(!noAdvance) setTimeout(function(){dcNext();},900);
 }
 
 function dcNext(){
@@ -598,6 +773,7 @@ function dcNext(){
 
 function dcQuit(){
   clearInterval(dcTimer);
+  ytStop();
   dcPaused=false;
   document.getElementById('dc-game-area').style.display='none';
   document.getElementById('game-menu').style.display='block';
@@ -605,6 +781,7 @@ function dcQuit(){
 
 function dcShowResult(){
   clearInterval(dcTimer);
+  ytStop();
   playDCSound('finish');
 
   // ── Streak & store update ──
@@ -689,6 +866,7 @@ function dcShowResult(){
 
 /* Update streak/level badges on init */
 updateDCBadges();
+(function(){var i=document.getElementById('yt-video-input'); if(i) i.value=localStorage.getItem('gk-yt-video')||'';})();
 
 
 </script>
