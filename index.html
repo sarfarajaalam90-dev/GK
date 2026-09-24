@@ -99,6 +99,10 @@ html,body{min-height:100%;font-family:'Plus Jakarta Sans',sans-serif;background:
 /* ── LAPTOP LAYOUT ── */
 #game-menu{max-width:720px;margin:0 auto}
 #dc-game-area{max-width:1000px;margin:0 auto}
+/* subtle 3D / raised-card effect for the question and option boxes */
+#dc-question-box{box-shadow:0 6px 14px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.07),inset 0 -6px 10px rgba(0,0,0,.12)}
+#dc-opts button{box-shadow:0 4px 10px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.07),inset 0 -3px 6px rgba(0,0,0,.12);transition:all .15s,box-shadow .15s,transform .1s}
+#dc-opts button:active{box-shadow:0 1px 3px rgba(0,0,0,.3),inset 0 2px 5px rgba(0,0,0,.25);transform:translateY(1px)}
 /* question: larger than the answer boxes */
 #dc-question-box{font-size:24px!important;line-height:1.55!important;padding:30px 34px!important;min-height:150px;display:flex;align-items:center;margin-bottom:22px!important;border-radius:18px!important}
 /* options: 2 x 2 grid */
@@ -135,7 +139,7 @@ html,body{min-height:100%;font-family:'Plus Jakarta Sans',sans-serif;background:
 /* ── YOUTUBE LIVE: half-width option rows + viewers on the right ── */
 #dc-question-box{transition:font-size .6s ease}
 #dc-game-area.dc-results #dc-question-box{min-height:12vh!important;padding-top:14px!important;padding-bottom:14px!important;margin-bottom:18px!important;font-size:clamp(20px,2.2vw,32px)!important}
-#dc-opts.dc-rows{grid-template-columns:minmax(0,46%) minmax(0,1fr)!important;column-gap:clamp(16px,2vw,32px)!important;row-gap:12px!important}
+#dc-opts.dc-rows{grid-template-columns:minmax(0,46%) minmax(0,1fr)!important;column-gap:clamp(16px,2vw,32px)!important;row-gap:12px!important;margin-top:clamp(10px,3vh,36px)!important}
 #dc-opts.dc-rows button{grid-column:1!important;min-height:clamp(72px,10vh,100px)!important;padding:8px 20px!important;gap:14px!important}
 #dc-opts.dc-rows button > span:nth-child(2){flex:1 1 auto;min-width:0}
 .yt-count{margin-left:auto;flex:none;min-width:70px;text-align:right;font-weight:800;color:#fff;white-space:nowrap}
@@ -148,7 +152,7 @@ html,body{min-height:100%;font-family:'Plus Jakarta Sans',sans-serif;background:
 .yt-nm2{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:clamp(10px,.9vw,13px);font-weight:700;color:rgba(255,255,255,.92)}
 .yt-more2{flex:none;white-space:nowrap;font-weight:800;color:#fbbf24;font-size:clamp(13px,1.3vw,20px);opacity:0;animation:ytIn .55s ease forwards}
 @keyframes ytIn{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}
-@media(max-width:640px){#dc-opts.dc-rows{grid-template-columns:1fr!important}#dc-opts.dc-rows button{grid-column:1!important;grid-row:auto!important}.yt-side{grid-column:1;grid-row:auto!important;padding:6px 0 10px}}
+@media(max-width:640px){#dc-opts.dc-rows{grid-template-columns:1fr!important;margin-top:14px!important}#dc-opts.dc-rows button{grid-column:1!important;grid-row:auto!important}.yt-side{grid-column:1;grid-row:auto!important;padding:6px 0 10px}}
 
 /* ── TOP 10 ── */
 .yt-ttl{text-align:center;font-size:clamp(24px,2.6vw,40px);font-weight:900;color:#fff;margin:8px 0 4px}
@@ -691,8 +695,23 @@ var DC_SVG_PAUSE='<svg width="15" height="15" viewBox="0 0 24 24" fill="currentC
 var DC_SVG_PLAY='<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="6 4 20 12 6 20 6 4"/></svg>';
 function toggleDCPause(){
   var b=document.getElementById('dc-pause-btn'); if(!b) return;
-  if(dcPaused){ dcPaused=false; b.innerHTML=DC_SVG_PAUSE; dcStartTick(dcSession.q[dcSession.idx].a); }
-  else { dcPaused=true; clearInterval(dcTimer); b.innerHTML=DC_SVG_PLAY; }
+  if(dcPaused){
+    dcPaused=false; b.innerHTML=DC_SVG_PAUSE;
+    if(ytRound&&ytRound.ending){
+      var remain=ytAdvanceRemaining>0?ytAdvanceRemaining:YT_RESULT_HOLD_MS;
+      ytScheduleAdvance(remain,ytRound);
+    } else {
+      dcStartTick(dcSession.q[dcSession.idx].a);
+    }
+  } else {
+    dcPaused=true; b.innerHTML=DC_SVG_PLAY;
+    if(ytRound&&ytRound.ending){
+      ytAdvanceRemaining=Math.max(500,ytAdvanceDeadline-Date.now());
+      clearTimeout(ytAdvanceTimer);
+    } else {
+      clearInterval(dcTimer);
+    }
+  }
 }
 
 
@@ -703,6 +722,12 @@ var ytLive=false, ytChatId='', ytPageToken='', ytRound=null;
 var ytBotsUsed=false, ytBots=false, ytBotPool=[], ytBotTimers=[], ytHistory={};
 function ytOn(){ return ytLive||ytBots; }
 var ytLoopTimer=null, ytEndTimer=null, ytAdvanceTimer=null, ytInFlight=null, ytNextDelay=4000, ytLastToast=0;
+var ytAdvanceDeadline=0, ytAdvanceRemaining=0;
+function ytScheduleAdvance(ms,r){
+  clearTimeout(ytAdvanceTimer);
+  ytAdvanceDeadline=Date.now()+ms;
+  ytAdvanceTimer=setTimeout(function(){ if(ytRound===r) dcNext(); },ms);
+}
 
 function ytEsc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function ytToast(msg){
@@ -790,6 +815,7 @@ function ytHandleItems(items){
 
 function ytRoundStart(optTexts,correctText){
   clearTimeout(ytEndTimer); clearTimeout(ytAdvanceTimer);
+  ytAdvanceRemaining=0; ytAdvanceDeadline=0;
   var area=document.getElementById('dc-game-area'); if(area) area.classList.remove('dc-results');
   ytClearBots();
   if(!ytOn()){ ytRound=null; return; }
@@ -858,7 +884,7 @@ function ytShowResults(r,correctText){
     setTimeout(function(){ if(bar) bar.style.width=pct+'%'; },60);
   });
 
-  ytAdvanceTimer=setTimeout(function(){ if(ytRound===r) dcNext(); },YT_RESULT_HOLD_MS);
+  ytScheduleAdvance(YT_RESULT_HOLD_MS,r);
 }
 
 /* ── BOT VIEWERS (test mode when no YouTube link is entered) ── */
