@@ -173,7 +173,7 @@ html,body{min-height:100%;font-family:'Plus Jakarta Sans',sans-serif;background:
 
 /* ── v5: fill screen down to just above pause button · stronger 3D · non-blocking feedback pencil ── */
 .gk-ghost{z-index:600!important}
-#dc-game-area .dc-qwrap{display:flex;flex-direction:column;box-sizing:border-box;min-height:calc(100vh - 124px);min-height:calc(100dvh - 124px);padding-bottom:12px!important}
+#dc-game-area .dc-qwrap{display:flex;flex-direction:column;box-sizing:border-box;min-height:calc(100vh - 62px);min-height:calc(100dvh - 62px);padding-bottom:12px!important}
 #dc-game-area .dc-qwrap #dc-question-box{flex:1 1 auto;min-height:22vh;margin-bottom:clamp(24px,3.6vh,40px)!important}
 #dc-game-area .dc-qwrap #dc-opts{flex:1.25 1 auto;grid-auto-rows:1fr;margin-top:0;gap:clamp(24px,3.2vh,32px) clamp(18px,2vw,28px)}
 /* result screen: question stays compact, the 4 answer rows stretch down to the bottom */
@@ -765,7 +765,7 @@ function renderDCQuestion(){
     }).join('')
     +'</div></div>'
     +'<button class="gk-ghost" style="left:14px" onclick="dcQuit()" aria-label="Back"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>'
-    +'<button class="gk-ghost" id="dc-pause-btn" style="right:14px;bottom:54px" onclick="toggleDCPause()" aria-label="Pause/Resume">'+DC_SVG_PAUSE+'</button>'
+    +'<button class="gk-ghost" id="dc-pause-btn" style="right:54px;bottom:14px" onclick="toggleDCPause()" aria-label="Pause/Resume">'+DC_SVG_PAUSE+'</button>'
     +'<button class="gk-ghost" id="dc-pencil-btn" style="right:14px" onclick="toggleDCAnnotate()" aria-label="Draw feedback"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>'
     +'<button class="gk-ghost" id="dc-prev-btn" onclick="dcPrevQuestion()" aria-label="Previous question" style="left:14px;top:14px;bottom:auto;color:rgba(255,255,255,'+(prevDisabled?'.12':'.55')+');cursor:'+(prevDisabled?'default':'pointer')+'" '+(prevDisabled?'disabled':'')+'>'+svgChevL+'</button>'
     +'<button class="gk-ghost" id="dc-next-btn" onclick="dcNextQuestion()" aria-label="Next question" style="right:14px;top:14px;bottom:auto;color:rgba(255,255,255,'+(nextDisabled?'.12':'.55')+');cursor:'+(nextDisabled?'default':'pointer')+'" '+(nextDisabled?'disabled':'')+'>'+svgChevR+'</button>';
@@ -1450,7 +1450,7 @@ dcTimerInit();
 /* ── OPTIONAL VIDEO BACKGROUND: put a file named bg.mp4 next to this page (silent loop, e.g. Earth at night).
       If the file is missing nothing breaks — the page just keeps its normal dark background. ── */
 (function(){
-  var BG_VIDEO={src:'bg.mp4',opacity:.35,speed:1};     // opacity: 0.3 = very faint … 0.7 = strong · speed: 1 normal, 1.5 = fast-forward
+  var BG_VIDEO={src:'bg.mp4',opacity:.3,speed:1};     // opacity: 0.3 = very faint … 0.7 = strong · speed: 1 normal, 1.5 = fast-forward
   var box=document.querySelector('.wave-container'); if(!box||!BG_VIDEO.src) return;
   var v=document.createElement('video'), shade=document.createElement('div');
   v.className='bg-video'; shade.className='bg-video-shade';
