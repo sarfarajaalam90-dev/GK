@@ -149,6 +149,20 @@ html,body{min-height:100%;font-family:'Plus Jakarta Sans',sans-serif;background:
 .yt-more2{flex:none;white-space:nowrap;font-weight:800;color:#fbbf24;font-size:clamp(13px,1.3vw,20px);opacity:0;animation:ytIn .55s ease forwards}
 @keyframes ytIn{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}
 @media(max-width:640px){#dc-opts.dc-rows{grid-template-columns:1fr!important}#dc-opts.dc-rows button{grid-column:1!important;grid-row:auto!important}.yt-side{grid-column:1;grid-row:auto!important;padding:6px 0 10px}}
+
+/* ── TOP 10 ── */
+.yt-ttl{text-align:center;font-size:clamp(24px,2.6vw,40px);font-weight:900;color:#fff;margin:8px 0 4px}
+.yt-sub{text-align:center;font-size:clamp(11px,1vw,14px);font-weight:600;color:rgba(255,255,255,.5);margin-bottom:22px}
+.yt-top{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(5,auto);grid-auto-flow:column;gap:12px clamp(16px,2vw,32px)}
+.yt-trow{display:flex;align-items:center;gap:clamp(10px,1.2vw,16px);padding:10px 16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;min-width:0}
+.yt-rank{flex:none;width:clamp(28px,2.6vw,38px);height:clamp(28px,2.6vw,38px);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;background:rgba(255,255,255,.1);color:#fff;font-size:clamp(13px,1.2vw,18px)}
+.yt-rank.r1{background:#f59e0b;color:#1a1200}.yt-rank.r2{background:#cbd5e1;color:#111}.yt-rank.r3{background:#b45309;color:#fff}
+.yt-tname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;color:#fff;font-size:clamp(13px,1.2vw,18px)}
+.yt-tscore{flex:none;font-weight:900;color:#4ade80;font-size:clamp(16px,1.6vw,24px)}
+.yt-tscore small{font-size:.6em;color:rgba(255,255,255,.55);font-weight:700}
+.yt-ttime{flex:none;min-width:52px;text-align:right;font-weight:700;color:rgba(255,255,255,.55);font-size:clamp(11px,1vw,14px)}
+.yt-tbtns{display:flex;gap:10px;justify-content:center;margin-top:24px}
+@media(max-width:800px){.yt-top{grid-template-columns:1fr;grid-template-rows:none;grid-auto-flow:row}}
 </style>
 </head>
 <body>
@@ -203,7 +217,7 @@ html,body{min-height:100%;font-family:'Plus Jakarta Sans',sans-serif;background:
             <div style="font-size:10px;font-weight:800;color:rgba(255,255,255,.5);letter-spacing:1px;margin-bottom:6px">YOUTUBE LIVE (OPTIONAL)</div>
             <input id="yt-video-input" placeholder="Paste your live video link or ID" oninput="localStorage.setItem('gk-yt-video',this.value.trim())"
               style="width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.07);color:#fff;font-family:inherit;font-size:12px;font-weight:600;outline:none">
-            <div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:6px;font-weight:600">Viewers answer A / B / C / D in the live chat. Leave empty to play normally.</div>
+            <div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:6px;font-weight:600">Viewers answer A / B / C / D in the live chat. Leave empty to test with bot viewers.</div>
           </div>
         </div><!-- end game-menu -->
         <div id="dc-game-area" style="display:none"></div>
@@ -219,6 +233,7 @@ var S2_URL=DC_SHEET_URL; // S2 — Daily Challenge quiz questions
 var YT_API_KEY='AIzaSyAqJ2ZM87PMwFx2jLR0w6HwiQTpOMP8uzY';      // <-- replace REPLACE ME with your YouTube Data API v3 key
 var YT_QUESTION_SECONDS=15;         // how long the question stays open for viewers (live mode)
 var YT_ANSWER_GRACE_MS=3000;        // 'calculating answers' time after the question closes
+var YT_BOT_COUNT=40;                // bot viewers used for testing when no YouTube link is entered
 var YT_MAX_CHIPS=5;                 // viewers shown (picture + name) next to each option; the rest become '+N more'
 var YT_RESULT_HOLD_MS=12000;        // how long results stay on screen before the next question
 var YT_MIN_POLL_MS=3000;            // never poll chat faster than this (saves API quota)
@@ -450,7 +465,7 @@ function renderDCQuestion(){
   var q=dcSession.q[dcSession.idx];
   var total=dcSession.q.length;
   var num=dcSession.idx+1;
-  dcTotalTime=(ytLive?YT_QUESTION_SECONDS:30);
+  dcTotalTime=(ytOn()?YT_QUESTION_SECONDS:30);
   dcTimeLeft=dcTotalTime;
   dcSession.startTime=Date.now();
   playDCSound('click');
@@ -538,7 +553,7 @@ function dcStartTick(correctText){
       playDCSound('wrong');
       dcSession.score-=2;
       dcSession.answers.push({q:dcSession.q[dcSession.idx].q,chosen:'(Time Out)',correct:correctText,ok:false,bonus:0});
-      if(ytLive&&ytRound){ ytRoundEnd(correctText); } else { dcTimeoutReveal(correctText); }
+      if(ytOn()&&ytRound){ ytRoundEnd(correctText); } else { dcTimeoutReveal(correctText); }
     }
   },1000);
 }
@@ -557,6 +572,8 @@ function toggleDCPause(){
    YOUTUBE LIVE CHAT ANSWERS  (viewers type A / B / C / D)
    ============================================================ */
 var ytLive=false, ytChatId='', ytPageToken='', ytRound=null;
+var ytBotsUsed=false, ytBots=false, ytBotPool=[], ytBotTimers=[], ytHistory={};
+function ytOn(){ return ytLive||ytBots; }
 var ytLoopTimer=null, ytEndTimer=null, ytAdvanceTimer=null, ytInFlight=null, ytNextDelay=4000, ytLastToast=0;
 
 function ytEsc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
@@ -580,9 +597,9 @@ function ytParseAnswer(txt){
 }
 
 async function ytConnect(){
-  ytStop();
+  ytStop(); ytHistory={}; ytBotsUsed=false;
   var vid=ytParseVideoId(localStorage.getItem('gk-yt-video')||'');
-  if(!vid) return false;                       // no video entered -> normal game
+  if(!vid){ ytStartBots(); return true; }      // no video entered -> test mode with bot viewers
   if(!YT_API_KEY||YT_API_KEY==='REPLACE ME'){ ytToast('YouTube chat off: put your API key in YT_API_KEY (search REPLACE ME in the code)'); return false; }
   try{
     var r=await fetch('https://www.googleapis.com/youtube/v3/videos?part=liveStreamingDetails&id='+encodeURIComponent(vid)+'&key='+encodeURIComponent(YT_API_KEY));
@@ -597,7 +614,7 @@ async function ytConnect(){
   }catch(e){ ytToast('YouTube chat off: network error'); return false; }
 }
 function ytStop(){
-  ytLive=false; ytRound=null;
+  ytLive=false; ytBots=false; ytRound=null; ytClearBots();
   clearTimeout(ytLoopTimer); clearTimeout(ytEndTimer); clearTimeout(ytAdvanceTimer);
 }
 function ytLoop(){
@@ -637,19 +654,21 @@ function ytHandleItems(items){
     if(r.answers[au.channelId]) return;             // first answer per viewer counts
     var li=ytParseAnswer(sn.displayMessage);
     if(li<0||li>3) return;
-    r.answers[au.channelId]={li:li,t:t,name:au.displayName||'Viewer',pic:au.profileImageUrl||''};
+    r.answers[au.channelId]={li:li,t:t,id:au.channelId,name:au.displayName||'Viewer',pic:au.profileImageUrl||''};
   });
   var st=document.getElementById('dc-yt-status');
-  if(st&&!r.ending) st.textContent=Object.keys(r.answers).length+' answered';
+  if(st&&!r.ending) st.textContent=(ytBots?'TEST • ':'')+Object.keys(r.answers).length+' answered';
 }
 
 function ytRoundStart(optTexts,correctText){
   clearTimeout(ytEndTimer); clearTimeout(ytAdvanceTimer);
   var area=document.getElementById('dc-game-area'); if(area) area.classList.remove('dc-results');
-  if(!ytLive){ ytRound=null; return; }
+  ytClearBots();
+  if(!ytOn()){ ytRound=null; return; }
   var ci=-1, want=String(correctText).toLowerCase().trim();
   optTexts.forEach(function(t,i){ if(String(t).toLowerCase().trim()===want) ci=i; });
   ytRound={start:Date.now(),deadline:Infinity,correctIdx:ci,answers:{},ending:false};
+  if(ytBots) ytBotSchedule(ytRound);
 }
 function ytRoundEnd(correctText){
   var r=ytRound; if(!r||r.ending) return;
@@ -658,8 +677,7 @@ function ytRoundEnd(correctText){
   var num=document.getElementById('dc-timer-num'); if(num) num.textContent='…';
   ytLayoutRows();
   ytEndTimer=setTimeout(async function(){
-    if(ytInFlight) await ytInFlight;
-    await ytPollOnce();                              // one last fetch so late messages are included
+    if(ytLive){ if(ytInFlight) await ytInFlight; await ytPollOnce(); }   // one last fetch so late messages are included
     if(ytRound!==r) return;                          // host moved to another question meanwhile
     ytShowResults(r,correctText);
   },YT_ANSWER_GRACE_MS);
@@ -687,9 +705,12 @@ function ytShowResults(r,correctText){
   Object.keys(r.answers).forEach(function(k){ var a=r.answers[k]; byOpt[a.li].push(a); total++; });
   byOpt.forEach(function(list){ list.sort(function(x,y){return x.t-y.t;}); });   // fastest first
   var correctCount=(byOpt[r.correctIdx]||[]).length;
+  var hist={};
+  Object.keys(r.answers).forEach(function(k){ var a=r.answers[k]; hist[k]={id:k,name:a.name,pic:a.pic,ok:a.li===r.correctIdx,secs:Math.max(0,(a.t-r.start)/1000)}; });
+  ytHistory[dcSession.idx]=hist;
   dcTimeoutReveal(correctText,true);
   var st=document.getElementById('dc-yt-status');
-  if(st) st.textContent=total===0?'No answers':total+' answered • '+correctCount+' correct';
+  if(st) st.textContent=(ytBots?'TEST • ':'')+(total===0?'No answers':total+' answered • '+correctCount+' correct');
 
   document.querySelectorAll('#dc-opts button').forEach(function(b,i){
     var list=byOpt[i]||[], c=list.length, pct=total?Math.round(c*100/total):0;
@@ -697,7 +718,8 @@ function ytShowResults(r,correctText){
     var chips=shown.map(function(a,n){
       var init=ytEsc((a.name||'?').replace(/^@/,'').charAt(0).toUpperCase());
       var img=/^https:\/\//.test(a.pic)?'<img src="'+ytEsc(a.pic)+'" referrerpolicy="no-referrer" alt="" onerror="this.style.display=\'none\'">':'';
-      return '<span class="yt-chip" style="animation-delay:'+(n*140)+'ms"><span class="yt-av2">'+init+img+'</span>'
+      var bg=ytBotBg(a.id);
+      return '<span class="yt-chip" style="animation-delay:'+(n*140)+'ms"><span class="yt-av2"'+bg+'>'+init+img+'</span>'
         +'<span class="yt-nm2">'+ytEsc(a.name)+'</span></span>';
     }).join('');
     if(more>0) chips+='<span class="yt-more2" style="animation-delay:'+(shown.length*140)+'ms">+'+more+' more</span>';
@@ -711,10 +733,81 @@ function ytShowResults(r,correctText){
   ytAdvanceTimer=setTimeout(function(){ if(ytRound===r) dcNext(); },YT_RESULT_HOLD_MS);
 }
 
+/* ── BOT VIEWERS (test mode when no YouTube link is entered) ── */
+function ytBotBg(id){
+  var m=String(id||'').match(/^bot(\d+)$/); if(!m) return '';
+  return ' style="background:hsl('+((parseInt(m[1],10)*47)%360)+',55%,38%)"';
+}
+function ytClearBots(){ ytBotTimers.forEach(function(t){clearTimeout(t);}); ytBotTimers=[]; }
+function ytStartBots(){
+  ytBots=true; ytBotsUsed=true;
+  var names=['Ram','Sita','Hari','Gita','Bikash','Kabita','Sunil','Anu','Mina','Dev','Prakash','Sabina','Rojan','Puja','Nabin','Sanjay','Rima','Kiran','Bibek','Asmita','Roshan','Samir','Nisha','Aayush','Sarita','Deepak','Manisha','Umesh','Laxmi','Bishal','Sushma','TekBahadur','Pramila','Ganesh','RajkishorYadav','Kamala','Nikita','Kalpana','Suraj','Anjali'];
+  ytBotPool=[];
+  for(var i=0;i<YT_BOT_COUNT;i++){
+    var n=names[i%names.length]+(i>=names.length?String(Math.floor(i/names.length)+1):'');
+    ytBotPool.push({id:'bot'+i,name:'@'+n+'_bot',skill:0.35+Math.random()*0.6,active:0.75+Math.random()*0.2,speed:0.25+Math.random()*0.75});
+  }
+}
+function ytBotSchedule(r){
+  var T=YT_QUESTION_SECONDS*1000;
+  ytBotPool.forEach(function(b){
+    if(Math.random()>b.active) return;                       // this bot skips the question
+    var li;
+    if(r.correctIdx>=0&&Math.random()<b.skill) li=r.correctIdx;
+    else { do{ li=Math.floor(Math.random()*4); }while(li===r.correctIdx); }
+    var delay=Math.random()<0.05 ? T+Math.random()*YT_ANSWER_GRACE_MS*0.7      // a few arrive late (inside the calculating window)
+                                 : 700+b.speed*Math.random()*Math.max(200,T-1600);
+    ytBotTimers.push(setTimeout(function(){
+      if(ytRound!==r) return;
+      ytHandleItems([{snippet:{type:'textMessageEvent',publishedAt:new Date().toISOString(),displayMessage:'ABCD'.charAt(li)},
+                      authorDetails:{channelId:b.id,displayName:b.name,profileImageUrl:''}}]);
+    },delay));
+  });
+}
+
+/* ── TOP 10 VIEWERS (final screen in live / test mode) ── */
+function ytShowTop10(){
+  var area=document.getElementById('dc-game-area'); if(!area) return;
+  area.classList.remove('dc-results');
+  var stats={}, nQ=dcSession.q.length;
+  Object.keys(ytHistory).forEach(function(qi){
+    var m=ytHistory[qi];
+    Object.keys(m).forEach(function(id){
+      var a=m[id], s=stats[id]||(stats[id]={id:id,name:a.name,pic:a.pic,correct:0,answered:0,time:0});
+      s.answered++; if(a.ok){ s.correct++; s.time+=a.secs; }
+    });
+  });
+  var all=Object.keys(stats).map(function(k){return stats[k];});
+  var list=all.filter(function(s){return s.correct>0;});
+  list.sort(function(a,b){return b.correct-a.correct||a.time-b.time;});      // most correct, then fastest total time
+  var top=list.slice(0,10);
+  var rows=top.map(function(s,i){
+    var init=ytEsc((s.name||'?').replace(/^@/,'').charAt(0).toUpperCase());
+    var img=/^https:\/\//.test(s.pic)?'<img src="'+ytEsc(s.pic)+'" referrerpolicy="no-referrer" alt="" onerror="this.style.display=\'none\'">':'';
+    return '<div class="yt-trow"><span class="yt-rank r'+(i<3?i+1:0)+'">'+(i+1)+'</span>'
+      +'<span class="yt-av2"'+ytBotBg(s.id)+'>'+init+img+'</span>'
+      +'<span class="yt-tname">'+ytEsc(s.name)+'</span>'
+      +'<span class="yt-tscore">'+s.correct+'<small>/'+nQ+'</small></span>'
+      +'<span class="yt-ttime">'+s.time.toFixed(1)+'s</span></div>';
+  }).join('');
+  area.innerHTML=
+    '<div style="padding:4px 14px 24px" class="yt-topwrap">'
+    +'<div style="display:flex;align-items:center;justify-content:center;gap:9px;margin:2px 0 6px">'
+    +'<img src="'+DC_LOGO_URI+'" alt="" style="width:42px;height:42px;display:block;flex-shrink:0">'
+    +'<span style="font-size:17px;font-weight:800;color:#fff;letter-spacing:.2px">Shikshit Mitra</span></div>'
+    +'<div class="yt-ttl">Top 10 Viewers</div>'
+    +'<div class="yt-sub">'+(ytBotsUsed?'TEST • ':'')+all.length+' viewers took part • ranked by correct answers, then total speed</div>'
+    +(top.length?'<div class="yt-top">'+rows+'</div>':'<div class="yt-sub" style="font-size:16px;margin-top:30px">Nobody answered correctly this time</div>')
+    +'<div class="yt-tbtns">'
+    +'<button onclick="startDailyChallenge()" style="padding:12px 28px;background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;border:none;border-radius:12px;font-family:inherit;font-size:14px;font-weight:800;cursor:pointer">Play Again</button>'
+    +'<button onclick="dcQuit()" style="padding:12px 28px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.15);border-radius:12px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Back</button>'
+    +'</div></div>';
+}
+
 function escQ(s){return (s||'').replace(/'/g,'&#39;').replace(/"/g,'&quot;');}
 
 function dcAnswer(btn,chosen,correct){
-  if(ytLive) return; // live mode: answers come from YouTube chat
+  if(ytOn()) return; // live/test mode: answers come from chat (or bots)
   if(dcPaused) return;
   clearInterval(dcTimer);
   var ok=(chosen.toLowerCase().trim()===correct.toLowerCase().trim());
@@ -802,8 +895,10 @@ function dcQuit(){
 
 function dcShowResult(){
   clearInterval(dcTimer);
+  var useTop=ytOn();
   ytStop();
   playDCSound('finish');
+  if(useTop){ ytShowTop10(); return; }
 
   // ── Streak & store update ──
   var store=getDCStore();
