@@ -147,7 +147,7 @@ html,body{min-height:100%;font-family:'Plus Jakarta Sans',sans-serif;background:
 #dc-opts.dc-rows button > span:nth-child(2){flex:1 1 auto;min-width:0}
 .yt-count{margin-left:auto;flex:none;min-width:70px;text-align:right;font-weight:800;color:#fff;white-space:nowrap}
 .yt-count small{font-size:.65em;opacity:.75;font-weight:700}
-.yt-bar{position:absolute;left:0;top:0;height:100%;background:rgba(255,255,255,.22);z-index:-1;transition:width .8s ease}
+.yt-bar{position:absolute;right:0;top:0;height:100%;background:rgba(0,0,0,.45);z-index:-1;transition:width .8s ease}
 .yt-side{grid-column:2;display:flex;align-items:center;gap:clamp(10px,1.3vw,20px);min-width:0;overflow:hidden}
 .yt-chip{display:flex;flex-direction:column;align-items:center;gap:4px;flex:none;width:clamp(58px,5.8vw,84px);opacity:0;animation:ytIn .55s ease forwards}
 .yt-av2{position:relative;width:clamp(38px,3.7vw,54px);height:clamp(38px,3.7vw,54px);border-radius:50%;overflow:hidden;border:2px solid rgba(255,255,255,.75);background:#1a6b3c;color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:clamp(14px,1.3vw,20px)}
@@ -1143,10 +1143,10 @@ function ytShowResults(r,correctText){
     }).join('');
     if(more>0) chips+='<span class="yt-more2" style="animation-delay:'+(shown.length*140)+'ms">+'+more+' more</span>';
     b.style.position='relative'; b.style.overflow='hidden';
-    b.insertAdjacentHTML('beforeend','<span class="yt-count">'+c+' <small>'+pct+'%</small></span><span class="yt-bar" style="width:0"></span>');
+    b.insertAdjacentHTML('beforeend','<span class="yt-count">'+c+' <small>'+pct+'%</small></span><span class="yt-bar" style="width:100%"></span>');
     b.insertAdjacentHTML('afterend','<div class="yt-side" style="grid-row:'+(i+1)+'">'+chips+'</div>');
     var bar=b.querySelector('.yt-bar');
-    setTimeout(function(){ if(bar) bar.style.width=pct+'%'; },60);
+    setTimeout(function(){ if(bar) bar.style.width=(100-pct)+'%'; },60);
   });
 
   ytScheduleAdvance(YT_RESULT_HOLD_MS,r);
