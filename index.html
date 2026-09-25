@@ -139,6 +139,12 @@ html,body{min-height:100%;font-family:'Plus Jakarta Sans',sans-serif;background:
   #dc-opts .dc-letter{width:30px!important;height:30px!important;font-size:12px!important}
 }
 
+/* ── Question-to-question slide transition ── */
+@keyframes dcSlideInNext{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:translateX(0)}}
+@keyframes dcSlideInPrev{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:translateX(0)}}
+.dc-qwrap{animation:dcSlideInNext .42s cubic-bezier(.22,1,.36,1)}
+.dc-qwrap.dc-slide-in-prev{animation-name:dcSlideInPrev}
+
 /* ── YOUTUBE LIVE: half-width option rows + viewers on the right ── */
 #dc-question-box{transition:font-size .6s ease}
 #dc-game-area.dc-results #dc-question-box{min-height:12vh!important;padding-top:14px!important;padding-bottom:14px!important;margin-bottom:18px!important;font-size:clamp(20px,2.2vw,32px)!important}
@@ -707,7 +713,7 @@ function closeQuestionSelector(){
   updateDCSelectedLabel();
 }
 
-function renderDCQuestion(){
+function renderDCQuestion(dcDir){
   clearInterval(dcTimer);
   dcPaused=false;
   var area=document.getElementById('dc-game-area');
@@ -739,7 +745,7 @@ function renderDCQuestion(){
   var nextDisabled=dcSession.idx>=total-1;
 
   area.innerHTML=
-    '<div class="dc-qwrap" style="padding:4px 14px 4px">'
+    '<div class="dc-qwrap'+(dcDir==='prev'?' dc-slide-in-prev':'')+'" style="padding:4px 14px 4px">'
     // Header row: question label (left) | logo + name (center) | answer count + timer (right)
     +'<div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;margin:2px 0 12px">'
     +'<div id="dc-prog-label" style="font-size:11px;font-weight:700;color:rgba(255,255,255,.6)">'+progLabel+'</div>'
@@ -778,7 +784,7 @@ function renderDCQuestion(){
 function dcPrevQuestion(){
   if(dcSession.idx<=0)return;
   dcSession.idx--;
-  renderDCQuestion();
+  renderDCQuestion('prev');
 }
 
 function dcNextQuestion(){
