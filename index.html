@@ -140,9 +140,9 @@ html,body{min-height:100%;font-family:'Plus Jakarta Sans',sans-serif;background:
 }
 
 /* ── Question-to-question slide transition ── */
-@keyframes dcSlideInNext{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:translateX(0)}}
-@keyframes dcSlideInPrev{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:translateX(0)}}
-.dc-qwrap{animation:dcSlideInNext .42s cubic-bezier(.22,1,.36,1)}
+@keyframes dcSlideInNext{from{opacity:0;transform:translateX(34px)}to{opacity:1;transform:translateX(0)}}
+@keyframes dcSlideInPrev{from{opacity:0;transform:translateX(-34px)}to{opacity:1;transform:translateX(0)}}
+.dc-qwrap{animation:dcSlideInNext .68s cubic-bezier(.16,1,.3,1)}
 .dc-qwrap.dc-slide-in-prev{animation-name:dcSlideInPrev}
 
 /* ── SPLASH / LANDING SCREEN ── */
@@ -1481,20 +1481,25 @@ dcTimerInit();
 
 
 /* ── OPTIONAL VIDEO BACKGROUND: put a file named bg.mp4 next to this page (silent loop, e.g. Earth at night).
-      If the file is missing nothing breaks — the page just keeps its normal dark background. ── */
-(function(){
-  var BG_VIDEO={src:'bg.mp4',opacity:.3,speed:1};     // opacity: 0.3 = very faint … 0.7 = strong · speed: 1 normal, 1.5 = fast-forward
-  var box=document.querySelector('.wave-container'); if(!box||!BG_VIDEO.src) return;
-  var v=document.createElement('video'), shade=document.createElement('div');
-  v.className='bg-video'; shade.className='bg-video-shade';
+      If the file is missing nothing breaks — the page just keeps its normal look. ── */
+function gkAttachBgVideo(container,opacity,withShade,before){
+  if(!container) return;
+  var v=document.createElement('video'), shade=withShade?document.createElement('div'):null;
+  v.className='bg-video'; if(shade) shade.className='bg-video-shade';
   v.muted=true; v.defaultMuted=true; v.loop=true; v.autoplay=true; v.playsInline=true; v.preload='auto';
   v.setAttribute('muted',''); v.setAttribute('playsinline','');
-  v.style.opacity=BG_VIDEO.opacity;
-  v.addEventListener('error',function(){ v.remove(); shade.remove(); box.classList.remove('has-video'); });
-  v.addEventListener('playing',function(){ v.playbackRate=BG_VIDEO.speed; box.classList.add('has-video'); });
-  box.insertBefore(shade,box.firstChild); box.insertBefore(v,box.firstChild);   // video at the very back, then a dark shade for readability
-  v.src=BG_VIDEO.src;
+  v.style.opacity=opacity;
+  v.addEventListener('error',function(){ v.remove(); if(shade) shade.remove(); container.classList.remove('has-video'); });
+  v.addEventListener('playing',function(){ v.playbackRate=1; container.classList.add('has-video'); });
+  if(before){ if(shade) container.insertBefore(shade,before); container.insertBefore(v,shade||before); }
+  else { if(shade) container.insertBefore(shade,container.firstChild); container.insertBefore(v,container.firstChild); }
+  v.src='bg.mp4';
   var pr=v.play(); if(pr&&pr.catch) pr.catch(function(){});
+}
+(function(){
+  gkAttachBgVideo(document.querySelector('.wave-container'),.3,true,null);          // Daily Challenge screens (unchanged)
+  var splash=document.getElementById('gk-splash'), splashShade=splash&&splash.querySelector('.gk-splash-shade');
+  if(splash&&splashShade) gkAttachBgVideo(splash,.25,false,splashShade);             // first/splash screen, faint, under the existing shade
 })();
 
 
